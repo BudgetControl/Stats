@@ -32,11 +32,5 @@ $errorMiddleware->setDefaultErrorHandler(function (\Slim\Http\ServerRequest $req
         $code = 500;
     }
 
-    $response = $app->getResponseFactory()->createResponse($code);
-    $response->getBody()->write(
-        json_encode($payload, JSON_UNESCAPED_UNICODE)
-    );
-
-
-    return $response->withHeader('Content-Type', 'application/json');
+    return response($payload, $code);
 });

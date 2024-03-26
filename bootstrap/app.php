@@ -29,7 +29,8 @@ $formatter = new \Monolog\Formatter\SyslogFormatter();
 $streamHandler->setFormatter($formatter);
 $logger->pushHandler($streamHandler);
 
+// Set up the Facade application
 Facade::setFacadeApplication([
     'log' => $logger,
-    'date' => new Date()
+    'date' => new Date(),
 ]);

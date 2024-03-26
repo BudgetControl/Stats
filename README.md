@@ -21,7 +21,7 @@ This repository contains the code of stats about BudgetControl application.
     task build:dev
     ```
 
-5. Open your browser and visit [http://localhost:8083](http://localhost:8083) to access the BudgetControl application.
+5. Open your browser and visit [http://localhost:8084](http://localhost:8084) to access the BudgetControl application.
 
 ## Task Commands
 
