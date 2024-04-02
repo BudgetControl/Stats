@@ -2,7 +2,7 @@
 namespace Budgetcontrol\Stats\Domain\Entity\BarChart;
 
 use Budgetcontrol\Stats\Domain\Entity\BarChart\BarChartBar;
-use Budgetcontrol\Workspace\Service\Traits\Serializer;
+use Budgetcontrol\Stats\Trait\Serializer;
 
 final class BarChart
 {

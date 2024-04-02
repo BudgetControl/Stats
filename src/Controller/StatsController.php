@@ -6,7 +6,9 @@ use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
+use Brick\Math\Internal\Calculator\BcMathCalculator;
 use DateTime;
+use Webit\Wrapper\BcMath\BcMathNumber;
 
 class StatsController {
 
@@ -80,8 +82,14 @@ class StatsController {
             new DateTime('first day of this month'),
             new DateTime('last day of this month')
         );
-        $result = $repository->totalWithPlannedOfCurrentMonth();
+        $results = $repository->totalWithPlannedOfCurrentMonth();
+        $math = new BcMathNumber();
+        $total = 0;
+        foreach($results as $key => $result) {
+            $total = $math->add($result);
+        }
 
-        return response($result,200);
+
+        return response(['balance' => $total],200);
     }
 }

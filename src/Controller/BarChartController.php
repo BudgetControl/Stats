@@ -19,10 +19,10 @@ class BarChartController extends ChartController
 
         $barChart = new BarChart();
 
-        foreach ($params['date'] as $_ => $value) {
+        foreach ($params['date_time'] as $_ => $value) {
 
-            $startDate = new DateTime($value['start_date']);
-            $endDate = new DateTime($value['end_date']);
+            $startDate = new DateTime($value['start']);
+            $endDate = new DateTime($value['end']);
 
             $incomingRepository = new ExpensesRepository(
                 $arg['wsid'],
@@ -31,14 +31,14 @@ class BarChartController extends ChartController
             );
 
             foreach($incomingRepository->expensesByCategory() as $category) {
-                if ($categories && !in_array($category['category_name'], $categories)) {
+                if ($categories && !in_array($category->category_name, $categories)) {
                     continue;
                 }
 
                 $barChart->addBar(
                     new BarChartBar(
-                        $category['total'],
-                        $category['category_name'],
+                        $category->total,
+                        $category->category_name,
                     )
                 );
 
@@ -46,7 +46,7 @@ class BarChartController extends ChartController
 
         }
 
-        return response($barChart, 200);
+        return response($barChart->toArray(), 200);
     }
 
     public function expensesLabelsByDate(Request $request, Response $response, $arg): Response
@@ -56,10 +56,10 @@ class BarChartController extends ChartController
 
         $barChart = new BarChart();
 
-        foreach($params['date'] as $_ => $value) {
+        foreach($params['date_time'] as $_ => $value) {
 
-            $startDate = new DateTime($value['start_date']);
-            $endDate = new DateTime($value['end_date']);
+            $startDate = new DateTime($value['start']);
+            $endDate = new DateTime($value['end']);
 
             $incomingRepository = new ExpensesRepository(
                 $arg['wsid'],
@@ -68,14 +68,14 @@ class BarChartController extends ChartController
             );
 
             foreach($incomingRepository->expensesByLabels() as $label) {
-                if ($labels && !in_array($label['label_name'], $labels)) {
+                if ($labels && !in_array($label->label_name, $labels)) {
                     continue;
                 }
 
                 $barChart->addBar(
                     new BarChartBar(
-                        $label['total'],
-                        $label['label_name'],
+                        $label->total,
+                        $label->label_name,
                     )
                 );
 
@@ -83,7 +83,7 @@ class BarChartController extends ChartController
 
         }
 
-        return response($barChart, 200);
+        return response($barChart->toArray(), 200);
 
     }
 }

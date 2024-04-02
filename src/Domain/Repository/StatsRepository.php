@@ -57,7 +57,7 @@ class StatsRepository {
         $result = DB::select($query);
 
         return [
-            'total' => $result['total']
+            'total' => $result[0]->total
         ];
     }
 
@@ -66,15 +66,17 @@ class StatsRepository {
 
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
+            FROM accounts
             WHERE workspace_id = $wsId
             AND installement = 0
-            AND deleted_at is null;
+            AND deleted_at is null
+            AND exclude_from_stats = 0;
         ";
 
         $result = DB::select($query);
 
         return [
-            'total' => $result['total_balance']
+            'total' => $result[0]->total_balance
         ];
     }
 
@@ -82,7 +84,7 @@ class StatsRepository {
         $wsId = $this->wsId;
 
         $query = "
-            SELECT * FROM budgetV2.accounts WHERE workspace_id = $wsId and deleted_at is null;
+            SELECT * FROM budgetV2.accounts WHERE workspace_id = $wsId AND deleted_at is null;
         ";
 
         $result = DB::select($query);
@@ -97,13 +99,13 @@ class StatsRepository {
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
             FROM accounts
-            WHERE workspace_id = $wsId;
+            WHERE workspace_id = $wsId AND deleted_at is null AND exclude_from_stats = 0;
         ";
 
         $result = DB::select($query);
 
         return [
-            'health' => $result['total_balance']
+            'health' => $result[0]->total_balance
         ];
     }
 
@@ -112,15 +114,16 @@ class StatsRepository {
 
         $query = "
         SELECT 
-        COALESCE(SUM(a.balance + a.installementValue), 0) AS account_balance,
-        COALESCE(SUM(e.planned_amount), 0) AS planned_amount_total,
-        COALESCE(SUM(a.balance + a.installementValue), 0) + COALESCE(SUM(e.planned_amount), 0) AS total_balance
+        COALESCE(SUM(CASE WHEN a.installement = 1  and a.balance < 0 THEN a.installementValue END), 0) AS installement_balance,
+        COALESCE(SUM(CASE WHEN a.installement = 0 THEN a.balance END), 0) AS balance_without_installement,
+        COALESCE(SUM(CASE WHEN e.planned = 1 THEN e.amount END), 0) AS planned_amount_total
         FROM 
             accounts AS a
         LEFT JOIN (
             SELECT 
                 account_id,
-                SUM(amount) AS planned_amount
+                planned,
+                SUM(amount) AS amount
             FROM 
                 entries
             WHERE 
@@ -135,17 +138,14 @@ class StatsRepository {
                 account_id
         ) AS e ON a.id = e.account_id
         WHERE 
-            a.installement = 0
-            AND a.deleted_at IS NULL
+            a.deleted_at IS NULL
             AND a.exclude_from_stats = 0
             AND a.workspace_id = $wsId;
         ";
 
         $result = DB::select($query);
 
-        return [
-            'total' => $result['total_balance']
-        ];
+        return $result[0];
     }
 
 }

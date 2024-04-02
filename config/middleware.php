@@ -27,7 +27,7 @@ $errorMiddleware->setDefaultErrorHandler(function (\Slim\Http\ServerRequest $req
         $payload['error']['trace'] = $e->getTrace();
     }
 
-    $code = $e->getCode();
+    $code = (int) $e->getCode();
     if ($code < 100 || $code > 599) {
         $code = 500;
     }

@@ -25,8 +25,8 @@ class LineChartController extends ChartController
 
         foreach ($params as $_ => $value) {
 
-            $startDate = new DateTime($value['start_date']);
-            $endDate = new DateTime($value['end_date']);
+            $startDate = new DateTime($value['start']);
+            $endDate = new DateTime($value['end']);
 
             $incomingRepository = new IncomingRepository(
                 $arg['wsid'],
@@ -62,6 +62,6 @@ class LineChartController extends ChartController
         $lineChart->addSeries($incomingSeries);
         $lineChart->addSeries($expensesSeries);
 
-        return response($lineChart, 200);
+        return response($lineChart->toArray(), 200);
     }
 }

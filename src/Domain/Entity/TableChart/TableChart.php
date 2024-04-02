@@ -2,7 +2,7 @@
 namespace Budgetcontrol\Stats\Domain\Entity\TableChart;
 
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
-use Budgetcontrol\Workspace\Service\Traits\Serializer;
+use Budgetcontrol\Stats\Trait\Serializer;
 
 final class TableChart
 {

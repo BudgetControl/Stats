@@ -2,7 +2,7 @@
 namespace Budgetcontrol\Stats\Domain\Entity\LineChart;
 
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartSeries;
-use Budgetcontrol\Workspace\Service\Traits\Serializer;
+use Budgetcontrol\Stats\Trait\Serializer;
 
 final class LineChart
 {

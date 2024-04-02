@@ -1,5 +1,5 @@
 <?php
-namespace Budgetcontrol\Workspace\Service\Traits;
+namespace Budgetcontrol\Stats\Trait;
 
 use stdClass;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;

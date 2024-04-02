@@ -63,7 +63,6 @@ class ExpensesRepository extends StatsRepository{
             WHERE 
                 e.type IN ('expenses', 'debit')
                 AND e.amount < 0
-                AND a.installement = 0
                 AND e.exclude_from_stats = 0
                 AND a.exclude_from_stats = 0
                 AND a.deleted_at IS NULL
