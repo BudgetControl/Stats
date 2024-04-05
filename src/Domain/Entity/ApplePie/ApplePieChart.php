@@ -1,5 +1,5 @@
 <?php
-namespace Budgetcontrol\Stats\Domain\Entity\BarChart;
+namespace Budgetcontrol\Stats\Domain\Entity\ApplePie;
 
 use Budgetcontrol\Stats\Trait\Serializer;
 
@@ -8,25 +8,25 @@ final class ApplePieChart
     use Serializer;
     
     public string $type = 'Apple';
-    private array $bar = [];
+    private array $field = [];
 
-    public function addBar(ApplePieChartField $bar)
+    public function addField(ApplePieChartField $field)
     {
-        $this->bar[] = $bar;
+        $this->field[] = $field;
     }
 
-    public function getBars()
+    public function getFields()
     {
-        return $this->bar;
+        return $this->field;
     }
 
     private function hash(): string
     {       
         $hash = '';
-        foreach($this->bar as $bar) {
-            $hash .= "{".$bar->getLabel().$bar->getColor().$bar->getValue()."}";
+        foreach($this->field as $field) {
+            $hash .= "{".$field->getLabel().$field->getColor().$field->getValue()."}";
         }
-        return md5("BarChart:$hash");
+        return md5("fieldChart:$hash");
     }
 
     public function isEqualsTo(ApplePieChart $chart): bool

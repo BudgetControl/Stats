@@ -10,6 +10,7 @@ use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartPoint;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartSeries;
+use Illuminate\Support\Carbon;
 
 class LineChartController extends ChartController
 {
@@ -23,10 +24,10 @@ class LineChartController extends ChartController
         $incomingSeries = new LineChartSeries('Incoming');
         $expensesSeries = new LineChartSeries('Expenses');
 
-        foreach ($params as $_ => $value) {
+        foreach ($params['date_time'] as $_ => $value) {
 
-            $startDate = new DateTime($value['start']);
-            $endDate = new DateTime($value['end']);
+            $startDate = Carbon::rawParse($value['start']);
+            $endDate = Carbon::rawParse($value['end']);
 
             $incomingRepository = new IncomingRepository(
                 $arg['wsid'],
@@ -61,7 +62,8 @@ class LineChartController extends ChartController
 
         $lineChart->addSeries($incomingSeries);
         $lineChart->addSeries($expensesSeries);
+        $results = $lineChart->toArray();
 
-        return response($lineChart->toArray(), 200);
+        return response($results, 200);
     }
 }

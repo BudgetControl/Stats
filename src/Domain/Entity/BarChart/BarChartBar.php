@@ -7,12 +7,14 @@ final class BarChartBar
     private int $value;
     private string $label;
     private string $color;
+    private int $labelId;
 
-    public function __construct(int $value, string $label)
+    public function __construct(int $value, string $label, int $labelId)
     {
         $this->value = $value;
         $this->label = $label;
         $this->color = $this->color();
+        $this->labelId = $labelId;
     }
 
     private function color()
@@ -46,5 +48,15 @@ final class BarChartBar
     public function getColor()
     {
         return $this->color;
+    }
+
+    /**
+     * Get the value of labelId
+     *
+     * @return int
+     */
+    public function getLabelId(): int
+    {
+        return $this->labelId;
     }
 }

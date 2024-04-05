@@ -4,22 +4,23 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 use DateTime;
 use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
+use Carbon\Carbon;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 class StatsRepository {
     
     protected int $wsId;
-    protected string $startDate;
-    protected string $endDate;
+    protected Carbon $startDate;
+    protected Carbon $endDate;
 
     /**
      * StatsRepository constructor.
      *
      * @param string $wsId The ID of the workspace.
-     * @param DateTime $startDate The start date for the stats.
-     * @param DateTime $endDate The end date for the stats.
+     * @param Carbon $startDate The start date for the stats.
+     * @param Carbon $endDate The end date for the stats.
      */
-    public function __construct(string $wsId, DateTime $startDate, DateTime $endDate)
+    public function __construct(string $wsId, Carbon $startDate, Carbon $endDate)
     {   
         $wsid = @Workspace::where('uuid', $wsId)->first()->id;
 
@@ -28,14 +29,14 @@ class StatsRepository {
         }
 
         $this->wsId = $wsid;
-        $this->startDate = $startDate->format('Y-m-d H:i:s');
-        $this->endDate = $endDate->format('Y-m-d H:i:s');
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
     }
 
     public function statsTotal() {
         $wsId = $this->wsId;
-        $startDate = $this->startDate;
-        $endDate = $this->endDate;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
 
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total

@@ -9,39 +9,49 @@ use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
 use Brick\Math\Internal\Calculator\BcMathCalculator;
 use DateTime;
 use Webit\Wrapper\BcMath\BcMathNumber;
+use Illuminate\Support\Carbon;
 
 class StatsController {
 
-    public function incoming(Request $request, Response $response, $arg) {
+    public function incomingOfCurrentMonth(Request $request, Response $response, $arg) {
         
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
+
         $repository = new IncomingRepository(
             $arg['wsid'],
-            new DateTime($request->getQueryParams()['start_date']),
-            new DateTime($request->getQueryParams()['end_date'])
+            $startDate,
+            $endDate
         );
         $result = $repository->statsIncoming();
 
         return response($result,200);
     }
 
-    public function expenses(Request $request, Response $response, $arg) {
+    public function expensesOfCurrentMonth(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
 
         $repository = new ExpensesRepository(
             $arg['wsid'],
-            new DateTime($request->getQueryParams()['start_date']),
-            new DateTime($request->getQueryParams()['end_date'])
+            $startDate,
+            $endDate
         );
         $result = $repository->statsExpenses();
 
         return response($result,200);
     }
 
-    public function total(Request $request, Response $response, $arg) {
+    public function totalOfCurrentMonth(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
 
         $repository = new StatsRepository(
             $arg['wsid'],
-            new DateTime($request->getQueryParams()['start_date']),
-            new DateTime($request->getQueryParams()['end_date'])
+            $startDate,
+            $endDate
         );
         $result = $repository->total();
 
@@ -51,10 +61,13 @@ class StatsController {
 
     public function wallets(Request $request, Response $response, $arg) {
 
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
+
         $repository = new StatsRepository(
             $arg['wsid'],
-            new DateTime('first day of this month'),
-            new DateTime('last day of this month')
+            $startDate,
+            $endDate
         );
         $result = $repository->wallets();
 
@@ -66,8 +79,8 @@ class StatsController {
 
         $repository = new StatsRepository(
             $arg['wsid'],
-            new DateTime('first day of this month'),
-            new DateTime('last day of this month')
+            Carbon::now()->firstOfMonth(),
+            Carbon::now()->lastOfMonth()
         );
         $result = $repository->health();
 
@@ -75,12 +88,15 @@ class StatsController {
 
     }
 
-    public function totalPlanned(Request $request, Response $response, $arg) {
+    public function totalPlannedOfCurrentMonth(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
 
         $repository = new StatsRepository(
             $arg['wsid'],
-            new DateTime('first day of this month'),
-            new DateTime('last day of this month')
+            $startDate,
+            $endDate
         );
         $results = $repository->totalWithPlannedOfCurrentMonth();
         $math = new BcMathNumber();

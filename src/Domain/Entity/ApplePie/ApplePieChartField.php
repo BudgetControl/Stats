@@ -1,5 +1,5 @@
 <?php
-namespace Budgetcontrol\Stats\Domain\Entity\BarChart;
+namespace Budgetcontrol\Stats\Domain\Entity\ApplePie;
 
 
 final class ApplePieChartField
@@ -7,11 +7,13 @@ final class ApplePieChartField
     private int $value;
     private string $label;
     private string $color;
+    private int $labelId;
 
-    public function __construct(int $value, string $label)
+    public function __construct(int $value, string $label, int $labelId)
     {
         $this->value = $value;
         $this->label = $label;
+        $this->labelId = $labelId;
         $this->color = $this->color();
     }
 
@@ -46,5 +48,15 @@ final class ApplePieChartField
     public function getColor()
     {
         return $this->color;
+    }
+
+    /**
+     * Get the value of labelId
+     *
+     * @return int
+     */
+    public function getLabelId(): int
+    {
+        return $this->labelId;
     }
 }

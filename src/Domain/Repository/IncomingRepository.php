@@ -8,25 +8,21 @@ class IncomingRepository extends StatsRepository {
     
     public function statsIncoming() {
         $wsId = $this->wsId;
-        $startDate = $this->startDate;
-        $endDate = $this->endDate;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
 
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
-            JOIN accounts AS a ON e.account_id = a.id
             WHERE e.type in ('incoming', 'debit')
             AND e.amount > 0
-            AND a.installement = 0
             AND e.exclude_from_stats = 0
-            AND a.exclude_from_stats = 0
-            AND a.deleted_at is null
             AND e.deleted_at is null
             AND e.confirmed = 1
             AND e.planned = 0
             AND e.date_time >= '$startDate'
             AND e.date_time < '$endDate'
-            AND a.workspace_id = $wsId;
+            AND e.workspace_id = $wsId;
         ";
 
         $result = DB::select($query);
@@ -39,8 +35,8 @@ class IncomingRepository extends StatsRepository {
     public function incomingByCategory()
     {
         $wsId = $this->wsId;
-        $startDate = $this->startDate;
-        $endDate = $this->endDate;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
 
         $query = "
             SELECT 
@@ -78,8 +74,8 @@ class IncomingRepository extends StatsRepository {
     public function incomingByLabels()
     {
         $wsId = $this->wsId;
-        $startDate = $this->startDate;
-        $endDate = $this->endDate;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
 
         $query = "
             SELECT 

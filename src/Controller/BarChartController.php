@@ -8,6 +8,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Entity\BarChart\BarChart;
 use Budgetcontrol\Stats\Domain\Entity\BarChart\BarChartBar;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
+use Illuminate\Support\Carbon;
 
 class BarChartController extends ChartController
 {
@@ -21,8 +22,8 @@ class BarChartController extends ChartController
 
         foreach ($params['date_time'] as $_ => $value) {
 
-            $startDate = new DateTime($value['start']);
-            $endDate = new DateTime($value['end']);
+            $startDate = Carbon::rawParse($value['start']);
+            $endDate = Carbon::rawParse($value['end']);
 
             $incomingRepository = new ExpensesRepository(
                 $arg['wsid'],
@@ -39,6 +40,7 @@ class BarChartController extends ChartController
                     new BarChartBar(
                         $category->total,
                         $category->category_name,
+                        $category->category_id
                     )
                 );
 
@@ -76,6 +78,7 @@ class BarChartController extends ChartController
                     new BarChartBar(
                         $label->total,
                         $label->label_name,
+                        $label->label_id
                     )
                 );
 

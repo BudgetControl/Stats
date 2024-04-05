@@ -10,39 +10,35 @@ class ExpensesRepository extends StatsRepository{
     
     public function statsExpenses() {
         $wsId = $this->wsId;
-        $startDate = $this->startDate;
-        $endDate = $this->endDate;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
 
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
-            JOIN accounts AS a ON e.account_id = a.id
             WHERE e.type in ('expenses', 'debit')
             AND e.amount < 0
-            AND a.installement = 0
             AND e.exclude_from_stats = 0
-            AND a.exclude_from_stats = 0
-            AND a.deleted_at is null
             AND e.deleted_at is null
             AND e.confirmed = 1
             AND e.planned = 0
             AND e.date_time >= '$startDate'
             AND e.date_time < '$endDate'
-            AND a.workspace_id = $wsId;
+            AND e.workspace_id = $wsId;
         ";
 
         $result = DB::select($query);
 
         return [
-            'total' => $result['total']
+            'total' => $result[0]->total
         ];
     }
 
     public function expensesByCategory(array $categories = [])
     {
         $wsId = $this->wsId;
-        $startDate = $this->startDate;
-        $endDate = $this->endDate;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
 
         $addConditions = '';
         if(!empty($categories)) {
@@ -57,21 +53,17 @@ class ExpensesRepository extends StatsRepository{
             FROM 
                 entries AS e
             JOIN 
-                accounts AS a ON e.account_id = a.id
-            JOIN 
                 sub_categories AS c ON e.category_id = c.id
             WHERE 
                 e.type IN ('expenses', 'debit')
                 AND e.amount < 0
                 AND e.exclude_from_stats = 0
-                AND a.exclude_from_stats = 0
-                AND a.deleted_at IS NULL
                 AND e.deleted_at IS NULL
                 AND e.confirmed = 1
                 AND e.planned = 0
                 AND e.date_time >= '$startDate'
                 AND e.date_time < '$endDate'
-                AND a.workspace_id = $wsId
+                AND e.workspace_id = $wsId
                 $addConditions
             GROUP BY
                 c.id, c.name;
@@ -85,8 +77,8 @@ class ExpensesRepository extends StatsRepository{
     public function expensesByLabels(array $labels = [])
     {
         $wsId = $this->wsId;
-        $startDate = $this->startDate;
-        $endDate = $this->endDate;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
 
         $addConditions = '';
         if(!empty($labels)) {
@@ -100,8 +92,6 @@ class ExpensesRepository extends StatsRepository{
                 COALESCE(SUM(e.amount), 0) AS total
             FROM 
                 entries AS e
-            JOIN 
-                accounts AS a ON e.account_id = a.id
             LEFT JOIN 
                 entry_labels AS el ON e.id = el.entry_id
             LEFT JOIN 
@@ -109,23 +99,27 @@ class ExpensesRepository extends StatsRepository{
             WHERE 
                 e.type IN ('expenses', 'debit')
                 AND e.amount < 0
-                AND a.installement = 0
                 AND e.exclude_from_stats = 0
-                AND a.exclude_from_stats = 0
-                AND a.deleted_at IS NULL
                 AND e.deleted_at IS NULL
                 AND e.confirmed = 1
                 AND e.planned = 0
                 AND e.date_time >= '$startDate'
                 AND e.date_time < '$endDate'
-                AND a.workspace_id = $wsId
+                AND e.workspace_id = $wsId
                 $addConditions
             GROUP BY 
                 l.id, l.name;
         ";
 
-        $result = DB::select($query);
+        $results = DB::select($query);
 
-        return $result;
+        //only labels
+        foreach($results as $key => $value) {
+            if($value->label_name == null) {
+                unset($results[$key]);
+            }
+        }
+
+        return $results;
     }
 }
