@@ -106,7 +106,7 @@ class StatsRepository {
         $result = DB::select($query);
 
         return [
-            'health' => $result[0]->total_balance
+            'total' => $result[0]->total_balance
         ];
     }
 

@@ -1,15 +1,15 @@
 <?php
 namespace Budgetcontrol\Stats\Controller;
 
+use Brick\Math\BigNumber;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
-use Brick\Math\Internal\Calculator\BcMathCalculator;
-use DateTime;
-use Webit\Wrapper\BcMath\BcMathNumber;
 use Illuminate\Support\Carbon;
+use Brick\Math\PercentCalculator;
+use Brick\Math\BigInteger;
 
 class StatsController {
 
@@ -18,14 +18,17 @@ class StatsController {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new IncomingRepository(
-            $arg['wsid'],
-            $startDate,
-            $endDate
-        );
-        $result = $repository->statsIncoming();
+        $repository = new IncomingRepository($arg['wsid'],$startDate,$endDate);
+        $currentAmount = $repository->statsIncoming()['total'];
 
-        return response($result,200);
+        $repository = new IncomingRepository($arg['wsid'],$startDate->modify("-1 month"),$endDate->modify("-1 month"));
+        $previusAMount = $repository->statsIncoming()['total'];
+
+        return response([
+            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $currentAmount, $previusAMount)),
+            "total" => $currentAmount,
+            "total_passed" => $previusAMount,
+        ],200);
     }
 
     public function expensesOfCurrentMonth(Request $request, Response $response, $arg) {
@@ -33,14 +36,18 @@ class StatsController {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new ExpensesRepository(
-            $arg['wsid'],
-            $startDate,
-            $endDate
-        );
-        $result = $repository->statsExpenses();
+        $repository = new ExpensesRepository($arg['wsid'],$startDate,$endDate);
+        $currentAmount = $repository->statsExpenses()['total'];
 
-        return response($result,200);
+        $repository = new ExpensesRepository($arg['wsid'],$startDate->modify("-1 month"),$endDate->modify("-1 month"));
+        $previusAMount = $repository->statsExpenses()['total'];
+
+        return response([
+            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $currentAmount, $previusAMount)),
+            "total" => $currentAmount,
+            "total_passed" => $previusAMount,
+        ],200);
+
     }
 
     public function totalOfCurrentMonth(Request $request, Response $response, $arg) {
@@ -98,14 +105,9 @@ class StatsController {
             $startDate,
             $endDate
         );
-        $results = $repository->totalWithPlannedOfCurrentMonth();
-        $math = new BcMathNumber();
-        $total = 0;
-        foreach($results as $key => $result) {
-            $total = $math->add($result);
-        }
-
-
-        return response(['balance' => $total],200);
+        $planned = $repository->totalWithPlannedOfCurrentMonth();
+        /** @var BigInteger $total */
+        $total = BigNumber::sum($planned->installement_balance, $planned->balance_without_installement, $planned->planned_amount_total);
+        return response(['total' => $total->__toString()],200);
     }
 }
