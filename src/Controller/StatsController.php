@@ -108,6 +108,6 @@ class StatsController {
         $planned = $repository->totalWithPlannedOfCurrentMonth();
         /** @var BigInteger $total */
         $total = BigNumber::sum($planned->installement_balance, $planned->balance_without_installement, $planned->planned_amount_total);
-        return response(['total' => $total->__toString()],200);
+        return response(['total' => (float) $total->__toString()],200);
     }
 }
