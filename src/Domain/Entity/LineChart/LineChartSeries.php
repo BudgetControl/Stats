@@ -15,7 +15,7 @@ final class LineChartSeries
         $this->color = $this->color();
     }
 
-    public function addDataPoint(LineChartPoint $dataPoint)
+    public function addDataPoint(LineChartPofloat $dataPoint)
     {
         $this->dataPoints[] = $dataPoint;
     }

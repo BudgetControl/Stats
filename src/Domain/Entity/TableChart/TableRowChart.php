@@ -7,9 +7,9 @@ final class TableRowChart
     private float $amount;
     private float $prevAmount;
     private string $label;
-    private int $bounceRate;
+    private float $bounceRate;
 
-    public function __construct(int $amount, int $prevAmount, string $label)
+    public function __construct(float $amount, float $prevAmount, string $label)
     {
         $this->amount = $amount;
         $this->prevAmount = $prevAmount;

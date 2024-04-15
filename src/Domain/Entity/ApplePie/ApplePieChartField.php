@@ -4,12 +4,12 @@ namespace Budgetcontrol\Stats\Domain\Entity\ApplePie;
 
 final class ApplePieChartField
 {
-    private int $value;
+    private float $value;
     private string $label;
     private string $color;
-    private int $labelId;
+    private float $labelId;
 
-    public function __construct(int $value, string $label, int $labelId)
+    public function __construct(float $value, string $label, float $labelId)
     {
         $this->value = $value;
         $this->label = $label;

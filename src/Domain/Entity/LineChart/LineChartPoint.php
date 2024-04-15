@@ -3,11 +3,11 @@ namespace Budgetcontrol\Stats\Domain\Entity\LineChart;
 
 class LineChartPoint
 {
-    private int $xValue;
-    private int $yValue;
+    private float $xValue;
+    private float $yValue;
     private string $label;
 
-    public function __construct(int $xValue, int $yValue, string $label = '')
+    public function __construct(float $xValue, float $yValue, string $label = '')
     {
         $this->xValue = $xValue;
         $this->yValue = $yValue;
