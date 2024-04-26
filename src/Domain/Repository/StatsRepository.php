@@ -149,4 +149,14 @@ class StatsRepository {
         return $result[0];
     }
 
+    public function installementValues()
+    {
+        $wsId = $this->wsId;
+
+        $query = "select installementValue from accounts where installement = 1 and deleted_at is null and date >= now() and workspace_id = $wsId and balance > installementValue;";
+        $result = DB::select($query);
+
+        return $result;
+    }
+
 }
