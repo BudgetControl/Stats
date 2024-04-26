@@ -25,8 +25,11 @@ class TableChartController extends ChartController
             $startDate = Carbon::rawParse($value['start']);
             $endDate = Carbon::rawParse($value['end']);
 
+            $startDatePrev = Carbon::rawParse($value['start'])->modify('-1 month');
+            $endDatePrev = Carbon::rawParse($value['end'])->modify('-1 month');
+
             $expensesRepository = new ExpensesRepository($arg['wsid'], $startDate, $endDate);
-            $expensesPrevRepository = new ExpensesRepository($arg['wsid'], $startDate->modify('-1 month'), $endDate->modify('-1 month'));
+            $expensesPrevRepository = new ExpensesRepository($arg['wsid'], $startDatePrev, $endDatePrev);
 
             foreach ($expensesRepository->expensesByCategory() as $category) {
                 if ($categories && !in_array($category->category_name, $categories)) {
