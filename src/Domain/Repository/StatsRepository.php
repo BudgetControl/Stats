@@ -154,7 +154,7 @@ class StatsRepository {
         $wsId = $this->wsId;
 
         $date = Carbon::now()->toAtomString();
-        $query = "select installementValue from accounts where installement = 1 and deleted_at is null and 'date' >= '$date' and workspace_id = $wsId and balance < installementValue;";
+        $query = "select installementValue from accounts where installement = 1 and deleted_at is null and 'date' >= '$date'  AND MONTH(date) = MONTH(CURRENT_DATE()) and workspace_id = $wsId and balance < installementValue;";
         $result = DB::select($query);
 
         return $result;
