@@ -23,10 +23,10 @@ class TableChartController extends ChartController
         foreach ($params['date_time'] as $_ => $value) {
 
             $startDate = Carbon::rawParse($value['start']);
-            $endDate = Carbon::rawParse($value['start']);
+            $endDate = Carbon::rawParse($value['end']);
 
             $expensesRepository = new ExpensesRepository($arg['wsid'], $startDate, $endDate);
-                $expensesPrevRepository = new ExpensesRepository($arg['wsid'], $startDate->modify('-1 month'), $endDate->modify('-1 month'));
+            $expensesPrevRepository = new ExpensesRepository($arg['wsid'], $startDate->modify('-1 month'), $endDate->modify('-1 month'));
 
             foreach ($expensesRepository->expensesByCategory() as $category) {
                 if ($categories && !in_array($category->category_name, $categories)) {
@@ -38,7 +38,7 @@ class TableChartController extends ChartController
                     new TableRowChart(
                         $category->total,
                         $expensesVluePrev->total,
-                        $category->category_name,
+                        $category->category_name
                     )
                 );
             }
