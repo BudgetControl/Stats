@@ -40,7 +40,7 @@ class TableChartController extends ChartController
                 $tableChart->addRows(
                     new TableRowChart(
                         $category->total,
-                        $expensesVluePrev->total,
+                        $expensesVluePrev->total ?? 0,
                         $category->category_name
                     )
                 );
