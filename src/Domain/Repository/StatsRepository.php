@@ -160,4 +160,6 @@ class StatsRepository {
         return $result;
     }
 
+
+    public function statsOf(array $types, array $categories, array $tags, Carbon $dateStart, Carbon $dateEnd, array $accounts)
 }
