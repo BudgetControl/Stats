@@ -128,9 +128,9 @@ class StatsRepository {
 
         $totalPlanned = $this->totalPlannedOfCurrentMonth();
 
-        $total = BigNumber::sum($result[0]->total_balance, $totalPlanned['total']);
+        $total = BigNumber::sum($result[0]->total_balance, $totalPlanned['total'])->toFloat();
         return [
-            'total' => (float) $total
+            'total' => $total
         ];
     }
 
