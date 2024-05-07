@@ -130,7 +130,7 @@ class StatsRepository {
 
         $total = BigNumber::sum($result[0]->total_balance, $totalPlanned['total']);
         return [
-            'total' => $total
+            'total' => (float) $total
         ];
     }
 
