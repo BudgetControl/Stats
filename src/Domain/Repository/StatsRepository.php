@@ -193,7 +193,7 @@ class StatsRepository {
 
         return $result;
     }
-
+  
     /**
      * Returns the total planned of the current month.
      *
@@ -223,5 +223,6 @@ class StatsRepository {
             'total' => $result[0]->planned_amount_total
         ];
     }
+
 
 }
