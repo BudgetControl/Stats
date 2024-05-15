@@ -1,6 +1,7 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Repository;
 
+use Brick\Math\BigNumber;
 use DateTime;
 use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
@@ -33,6 +34,11 @@ class StatsRepository {
         $this->endDate = $endDate;
     }
 
+    /**
+     * Retrieves the total stats.
+     *
+     * @return array The total stats.
+     */
     public function statsTotal() {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
@@ -62,6 +68,11 @@ class StatsRepository {
         ];
     }
 
+    /**
+     * Returns the total value.
+     *
+     * @return int The total value.
+     */
     public function total() {
         $wsId = $this->wsId;
 
@@ -81,6 +92,11 @@ class StatsRepository {
         ];
     }
 
+    /**
+     * Retrieves the wallets from the repository.
+     *
+     * @return array An array of wallets.
+     */
     public function wallets() {
         $wsId = $this->wsId;
 
@@ -93,6 +109,11 @@ class StatsRepository {
         return $result;
     }
 
+    /**
+     * Checks the health of the repository.
+     *
+     * @return void
+     */
     public function health() {
 
         $wsId = $this->wsId;
@@ -105,11 +126,19 @@ class StatsRepository {
 
         $result = DB::select($query);
 
+        $totalPlanned = $this->totalPlannedOfCurrentMonth();
+
+        $total = BigNumber::sum($result[0]->total_balance, $totalPlanned['total'])->toFloat();
         return [
-            'total' => $result[0]->total_balance
+            'total' => $total
         ];
     }
 
+    /**
+     * Calculates the total with planned value for the current month.
+     *
+     * @return int The total value with planned for the current month.
+     */
     public function totalWithPlannedOfCurrentMonth() {
         $wsId = $this->wsId;
 
@@ -149,6 +178,11 @@ class StatsRepository {
         return $result[0];
     }
 
+    /**
+     * Retrieves the installment values.
+     *
+     * @return array The installment values.
+     */
     public function installementValues()
     {
         $wsId = $this->wsId;
@@ -160,6 +194,34 @@ class StatsRepository {
         return $result;
     }
 
+    /**
+     * Returns the total planned of the current month.
+     *
+     * @return int The total planned of the current month.
+     */
+    public function totalPlannedOfCurrentMonth() {
+        $wsId = $this->wsId;
 
-    public function statsOf(array $types, array $categories, array $tags, Carbon $dateStart, Carbon $dateEnd, array $accounts)
+        $query = "
+            SELECT 
+                COALESCE(SUM(CASE WHEN e.planned = 1 THEN e.amount END), 0) AS planned_amount_total
+            FROM 
+                entries AS e
+            WHERE 
+                e.planned = 1
+                AND MONTH(e.date_time) = MONTH(CURRENT_DATE())
+                AND YEAR(e.date_time) = YEAR(CURRENT_DATE())
+                AND e.confirmed = 1
+                AND e.deleted_at IS NULL
+                AND e.exclude_from_stats = 0
+                AND e.workspace_id = $wsId;
+        ";
+
+        $result = DB::select($query);
+
+        return [
+            'total' => $result[0]->planned_amount_total
+        ];
+    }
+
 }
