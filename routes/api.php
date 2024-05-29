@@ -16,11 +16,3 @@ $app->get('/{wsid}/chart/table/expenses/category', \Budgetcontrol\Stats\Controll
 $app->get('/{wsid}/chart/bar/expenses/label', \Budgetcontrol\Stats\Controller\BarChartController::class . ':expensesLabelsByDate');
 $app->get('/{wsid}/chart/apple-pie/expenses/label', \Budgetcontrol\Stats\Controller\ApplePieChartController::class . ':expensesLabelsByDate');
 
-$app->get('/{wsid}/budgets', \Budgetcontrol\Stats\Controller\BudgetController::class . ':budgets');
-$app->post('/{wsid}/budget', \Budgetcontrol\Stats\Controller\BudgetController::class . ':create');
-$app->put('/{wsid}/budgets/{budgetId}', \Budgetcontrol\Stats\Controller\BudgetController::class . ':update');
-$app->delete('/{wsid}/budgets/{budgetId}', \Budgetcontrol\Stats\Controller\BudgetController::class . ':delete');
-$app->get('/{wsid}/budgets/{budgetId}/expired', \Budgetcontrol\Stats\Controller\BudgetController::class . ':expired');
-$app->get('/{wsid}/budgets/{budgetId}/exceeded', \Budgetcontrol\Stats\Controller\BudgetController::class . ':exceeded');
-$app->get('/{wsid}/budgets/{budgetId}/status', \Budgetcontrol\Stats\Controller\BudgetController::class . ':status');
-
