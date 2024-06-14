@@ -21,7 +21,7 @@ jobs:
           uses: wlixcc/SFTP-Deploy-Action@v1.2.4
           with:
               username: 'root'
-              server: ${{ secrets.SSH_HOST }} 
+              server: ${{ secrets.SFTP_HOST }} 
               ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }} 
               password: ${{ secrets.SFTP_PASSWORD }} 
               local_path: '.'
