@@ -16,3 +16,4 @@ $app->get('/{wsid}/chart/table/expenses/category', \Budgetcontrol\Stats\Controll
 $app->get('/{wsid}/chart/bar/expenses/label', \Budgetcontrol\Stats\Controller\BarChartController::class . ':expensesLabelsByDate');
 $app->get('/{wsid}/chart/apple-pie/expenses/label', \Budgetcontrol\Stats\Controller\ApplePieChartController::class . ':expensesLabelsByDate');
 
+$app->get('monitor', \Budgetcontrol\Stats\Controller\Controller::class . ':monitor');

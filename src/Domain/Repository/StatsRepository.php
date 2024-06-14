@@ -101,7 +101,7 @@ class StatsRepository {
         $wsId = $this->wsId;
 
         $query = "
-            SELECT * FROM budgetV2.accounts WHERE workspace_id = $wsId AND deleted_at is null;
+            SELECT * FROM accounts WHERE workspace_id = $wsId AND deleted_at is null;
         ";
 
         $result = DB::select($query);
@@ -170,6 +170,7 @@ class StatsRepository {
         WHERE 
             a.deleted_at IS NULL
             AND a.exclude_from_stats = 0
+            AND a.installement = 0
             AND a.workspace_id = $wsId;
         ";
 
