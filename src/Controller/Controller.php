@@ -26,7 +26,7 @@ class Controller {
 
         return response([
             'success' => true,
-            'message' => 'Authentication service is up and running'
+            'message' => 'Stats service is up and running'
         ]);
         
     }
