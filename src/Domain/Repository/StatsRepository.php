@@ -170,6 +170,7 @@ class StatsRepository {
         WHERE 
             a.deleted_at IS NULL
             AND a.exclude_from_stats = 0
+            AND a.installement = 0
             AND a.workspace_id = $wsId;
         ";
 
