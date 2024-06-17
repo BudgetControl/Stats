@@ -8,13 +8,15 @@ final class TableRowChart
     private float $prevAmount;
     private string $label;
     private float $bounceRate;
+    private string $type;
 
-    public function __construct(float $amount, float $prevAmount, string $label)
+    public function __construct(float $amount, float $prevAmount, string $label, string $type)
     {
         $this->amount = $amount;
         $this->prevAmount = $prevAmount;
         $this->label = $label;
         $this->bounceRate = $this->bounceRate();
+        $this->type = $type;
     }
 
     private function bounceRate()
@@ -61,5 +63,15 @@ final class TableRowChart
     public function getBounceRate()
     {
         return $this->bounceRate;
+    }
+
+    /**
+     * Get the value of type
+     *
+     * @return string
+     */
+    public function getType(): string
+    {
+        return $this->type;
     }
 }
