@@ -1,4 +1,4 @@
-name: Deploy APP
+name: Deploy application
 
 on:
   workflow_dispatch:
@@ -22,7 +22,6 @@ jobs:
           with:
               username: ${{ secrets.SFTP_USER }} 
               server: ${{ secrets.SFTP_HOST }} 
-              ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }} 
               password: ${{ secrets.SFTP_PASSWORD }} 
               port:  ${{ secrets.SFTP_PORT }}
               local_path: '.'
