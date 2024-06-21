@@ -74,7 +74,7 @@ class StatsRepository
     /**
      * Returns the total value.
      *
-     * @return int The total value.
+     * @return array The total value.
      */
     public function total()
     {
@@ -117,7 +117,7 @@ class StatsRepository
     /**
      * Checks the health of the repository.
      *
-     * @return void
+     * @return array
      */
     public function health()
     {
@@ -143,7 +143,7 @@ class StatsRepository
     /**
      * Calculates the total with planned value for the current month.
      *
-     * @return int The total value with planned for the current month.
+     * @return stdClass The total value with planned for the current month.
      */
     public function totalWithPlannedOfCurrentMonth()
     {
@@ -256,11 +256,23 @@ class StatsRepository
         }
 
         if (!empty($options['payment_methods'])) {
-            $addJoins .= " AND e.payment_type " . $options['payment_type'] . "";
+            $addJoins .= " AND e.payment_type IN ('" . implode("','", $options['payment_methods']) . "')";
         }
 
         if (!empty($options['currencies'])) {
-            $addJoins .= " AND e.currency_id = '" . $options['currencies'] . "'";
+            $addJoins .= " AND e.currency_id IN ('" . implode("','", $options['currencies']) . "')";
+        }
+
+        if(!empty($options['tags'])) {
+            $tags = $this->entriesFromTags($options['tags']);
+            $entries = array_map(function($entry) {
+                return $entry->id;
+            }, $tags);
+            $entries = implode(',', $entries);
+            $entries = str_replace(',,','',$entries); // Work Around fixme:
+            if(!empty($entries)) {
+                $addJoins .= " AND e.id in ($entries)";
+            }
         }
 
         $query = "select * from (
@@ -296,5 +308,26 @@ class StatsRepository
         $result = DB::select($query);
 
         return $result;
+    }
+
+    /**
+     * Retrieves entries from the repository based on the given tags.
+     *
+     * @param array $tags The tags to filter the entries by.
+     * @return array The array of entries matching the given tags.
+     */
+    protected function entriesFromTags(array $tags): array
+    {
+        $query = "select entries.* from entries
+        right join entry_labels on entries.id = entry_labels.entry_id
+        right join labels on entry_labels.labels_id = labels.id
+        where labels.id in (".implode(',', $tags).") AND entries.deleted_at IS NULL;";
+        $results = DB::select($query);
+
+        if(empty($results)) {
+            return [];
+        }
+
+        return $results;
     }
 }

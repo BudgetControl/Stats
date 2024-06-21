@@ -1,6 +1,7 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Entity\TableChart;
 use DivisionByZeroError;
+use Mlab\MathPercentage\Service\PercentCalculator;
 
 final class TableRowChart
 {
@@ -22,13 +23,15 @@ final class TableRowChart
     private function bounceRate()
     {
         try {
-            $difference = abs($this->amount - $this->prevAmount);
-            $segno = ($this->amount > $this->prevAmount) ? 1 : -1;
-            $percentage = ($difference / $this->amount) * 100 * $segno;
+            $percentage = PercentCalculator::calculatePercentage(PercentCalculator::MARGIN_PERCENTAGE, $this->amount, $this->prevAmount);
+            $percentage = $percentage->toFloat();
         } catch(DivisionByZeroError $e) {
-            $percentage = 0;
+            if($this->amount == 0 && $this->prevAmount == 0) {
+                $percentage = 0;
+            } else {
+                $percentage = ($this->amount > $this->prevAmount) ? 100 : -100;
+            }
         }
-
 
         return $percentage;
     }

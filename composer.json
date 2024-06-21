@@ -2,6 +2,12 @@
     "name": "budgetcontrol/stats",
     "description": "defines the dependencies required for a PHP microservice stats in a Budget application",
     "type": "none",
+    "repositories": {
+        "mlab/math-percentage": {
+            "type": "github",
+            "url": "https://github.com/mlabfactory/math-percentage.git"
+        }
+    },
     "require": {
         "php": "^8.1",
         "slim/slim": "^4.13",
@@ -21,7 +27,8 @@
         "illuminate/filesystem": "^11.0",
         "webit/bcmath": "^2.0",
         "nesbot/carbon": "^3.2",
-        "logtail/monolog-logtail": "^3.1"
+        "logtail/monolog-logtail": "^3.1",
+        "mlab/math-percentage": "^1.0"
     },
     "require-dev": {
         "nikic/php-parser": "^5.0",

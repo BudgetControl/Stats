@@ -130,13 +130,12 @@ class StatsController {
         $endDatePrev = clone $endDate;
         $endDatePrev->subDays($endDate->diffInDays($startDate) * -1);
 
-
         $options = [
             'types' => $body['type'] ?? 'expenses',
             'categories' => $body['categories'] ?? [],
             'accounts' => $body['accounts'] ?? [],
             'tags' => $body['tags'] ?? [],
-            'payment_methods' => $body['paymentMethods'] ?? [],
+            'payment_methods' => $body['payment_methods'] ?? [],
             'currencies' => $body['currencies'] ?? null,
         ];
 
