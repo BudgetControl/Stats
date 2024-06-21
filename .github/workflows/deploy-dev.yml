@@ -24,8 +24,9 @@ jobs:
               server: ${{ secrets.SFTP_HOST }} 
               ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }} 
               password: ${{ secrets.SFTP_PASSWORD }} 
+              port:  ${{ secrets.SFTP_PORT }}
               local_path: '.'
-              remote_path: '/var/www/budgetcontrol/Core/microservices/Stats'
+              remote_path: ${{ secrets.SFTP_PATH }}
               sftpArgs: '-o ConnectTimeout=5'
 
         - name: executing composer install
