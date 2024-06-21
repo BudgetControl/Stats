@@ -1599,20 +1599,20 @@
         },
         {
             "name": "mlab/math-percentage",
-            "version": "1.0.0",
+            "version": "v1.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mlabfactory/math-percentage.git",
-                "reference": "df2820e3aa575577638a945b8e3dee920d384efb"
+                "reference": "55c3aa396b86e2b4af7f0fcddccbcc30a8b4674d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mlabfactory/math-percentage/zipball/df2820e3aa575577638a945b8e3dee920d384efb",
-                "reference": "df2820e3aa575577638a945b8e3dee920d384efb",
+                "url": "https://api.github.com/repos/mlabfactory/math-percentage/zipball/55c3aa396b86e2b4af7f0fcddccbcc30a8b4674d",
+                "reference": "55c3aa396b86e2b4af7f0fcddccbcc30a8b4674d",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.2"
+                "php": "^8.1"
             },
             "require-dev": {
                 "phpunit/phpunit": "^11.1.3"
@@ -1639,10 +1639,10 @@
                 "php"
             ],
             "support": {
-                "source": "https://github.com/mlabfactory/math-percentage/tree/v1.0.0",
+                "source": "https://github.com/mlabfactory/math-percentage/tree/v1.0.1",
                 "issues": "https://github.com/mlabfactory/math-percentage/issues"
             },
-            "time": "2024-05-10T08:35:54+00:00"
+            "time": "2024-06-21T13:46:49+00:00"
         },
         {
             "name": "monolog/monolog",

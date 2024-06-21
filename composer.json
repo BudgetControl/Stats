@@ -28,7 +28,7 @@
         "webit/bcmath": "^2.0",
         "nesbot/carbon": "^3.2",
         "logtail/monolog-logtail": "^3.1",
-        "mlab/math-percentage": "^1.0"
+        "mlab/math-percentage": "v1.0.*"
     },
     "require-dev": {
         "nikic/php-parser": "^5.0",
