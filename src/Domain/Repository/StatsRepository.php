@@ -1,4 +1,5 @@
 <?php
+
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Brick\Math\BigNumber;
@@ -8,8 +9,9 @@ use Budgetcontrol\Stats\Domain\Model\Workspace;
 use Carbon\Carbon;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
-class StatsRepository {
-    
+class StatsRepository
+{
+
     protected int $wsId;
     protected Carbon $startDate;
     protected Carbon $endDate;
@@ -22,10 +24,10 @@ class StatsRepository {
      * @param Carbon $endDate The end date for the stats.
      */
     public function __construct(string $wsId, Carbon $startDate, Carbon $endDate)
-    {   
+    {
         $wsid = @Workspace::where('uuid', $wsId)->first()->id;
 
-        if(is_null($wsid)) {
+        if (is_null($wsid)) {
             throw new NotFoundResourceException('Workspace not found', 404);
         }
 
@@ -39,7 +41,8 @@ class StatsRepository {
      *
      * @return array The total stats.
      */
-    public function statsTotal() {
+    public function statsTotal()
+    {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
@@ -71,9 +74,10 @@ class StatsRepository {
     /**
      * Returns the total value.
      *
-     * @return int The total value.
+     * @return array The total value.
      */
-    public function total() {
+    public function total()
+    {
         $wsId = $this->wsId;
 
         $query = "
@@ -97,7 +101,8 @@ class StatsRepository {
      *
      * @return array An array of wallets.
      */
-    public function wallets() {
+    public function wallets()
+    {
         $wsId = $this->wsId;
 
         $query = "
@@ -112,9 +117,10 @@ class StatsRepository {
     /**
      * Checks the health of the repository.
      *
-     * @return void
+     * @return array
      */
-    public function health() {
+    public function health()
+    {
 
         $wsId = $this->wsId;
 
@@ -137,9 +143,10 @@ class StatsRepository {
     /**
      * Calculates the total with planned value for the current month.
      *
-     * @return int The total value with planned for the current month.
+     * @return stdClass The total value with planned for the current month.
      */
-    public function totalWithPlannedOfCurrentMonth() {
+    public function totalWithPlannedOfCurrentMonth()
+    {
         $wsId = $this->wsId;
 
         $query = "
@@ -200,7 +207,8 @@ class StatsRepository {
      *
      * @return int The total planned of the current month.
      */
-    public function totalPlannedOfCurrentMonth() {
+    public function totalPlannedOfCurrentMonth()
+    {
         $wsId = $this->wsId;
 
         $query = "
@@ -225,4 +233,101 @@ class StatsRepository {
         ];
     }
 
+    /**
+     * Retrieves statistics based on the provided filters.
+     *
+     * @param array $options An array of filters to apply.
+     * @return array An array containing the statistics data.
+     */
+    public function statsByFilters(array $options)
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $addConditions = '';
+        $addJoins = '';
+        if (!empty($options['categories'])) {
+            $addConditions .= " AND query.category_id IN ('" . implode("','", $options['categories']) . "')";
+        }
+
+        if (!empty($options['accounts'])) {
+            $addJoins .= " AND e.account_id IN ('" . implode("','", $options['accounts']) . "')";
+        }
+
+        if (!empty($options['payment_methods'])) {
+            $addJoins .= " AND e.payment_type IN ('" . implode("','", $options['payment_methods']) . "')";
+        }
+
+        if (!empty($options['currencies'])) {
+            $addJoins .= " AND e.currency_id IN ('" . implode("','", $options['currencies']) . "')";
+        }
+
+        if(!empty($options['tags'])) {
+            $tags = $this->entriesFromTags($options['tags']);
+            $entries = array_map(function($entry) {
+                return $entry->id;
+            }, $tags);
+            $entries = implode(',', $entries);
+            $entries = str_replace(',,','',$entries); // Work Around fixme:
+            if(!empty($entries)) {
+                $addJoins .= " AND e.id in ($entries)";
+            }
+        }
+
+        $query = "select * from (
+            SELECT 
+                c.uuid AS category_uuid,
+                cc.type AS category_type,
+                c.slug AS category_slug,
+                COALESCE(SUM(e.amount), 0) AS total 
+            FROM 
+                sub_categories AS c
+            JOIN 
+                categories AS cc ON c.category_id = cc.id
+            LEFT JOIN 
+                entries AS e ON e.category_id = c.id
+                AND e.exclude_from_stats = 0
+                AND e.deleted_at IS NULL
+                AND e.confirmed = 1
+                AND e.planned = 0
+                AND e.date_time >= '$startDate'
+                AND e.date_time < '$endDate'
+                AND e.workspace_id = $wsId
+                AND e.type IN ('expenses', 'incoming')
+                $addJoins
+            GROUP BY 
+                cc.type, c.name, c.id
+                ) as query
+            WHERE 
+                query.category_type in ('incoming','expenses')
+                $addConditions
+            ORDER BY
+                query.category_type desc;";
+
+        $result = DB::select($query);
+
+        return $result;
+    }
+
+    /**
+     * Retrieves entries from the repository based on the given tags.
+     *
+     * @param array $tags The tags to filter the entries by.
+     * @return array The array of entries matching the given tags.
+     */
+    protected function entriesFromTags(array $tags): array
+    {
+        $query = "select entries.* from entries
+        right join entry_labels on entries.id = entry_labels.entry_id
+        right join labels on entry_labels.labels_id = labels.id
+        where labels.id in (".implode(',', $tags).") AND entries.deleted_at IS NULL;";
+        $results = DB::select($query);
+
+        if(empty($results)) {
+            return [];
+        }
+
+        return $results;
+    }
 }

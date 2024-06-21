@@ -38,7 +38,7 @@ class LineChartController extends ChartController
             $incomingSeries->addDataPoint(
                 new LineChartPoint(
                     $incomingRepository->statsIncoming()['total'],
-                    5000,
+                    5000, //FIXME:  hardcoded value
                     $startDate->format('M')
                 )
             );

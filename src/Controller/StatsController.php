@@ -2,14 +2,16 @@
 namespace Budgetcontrol\Stats\Controller;
 
 use Brick\Math\BigNumber;
-use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
-use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
+use Brick\Math\BigInteger;
+use Illuminate\Support\Carbon;
+use Budgetcontrol\Stats\Helpers\PercentCalculator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
-use Illuminate\Support\Carbon;
-use Budgetcontrol\Stats\Helpers\PercentCalculator;
-use Brick\Math\BigInteger;
+use Budgetcontrol\Stats\Domain\Entity\TableChart\TableChart;
+use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
+use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
+use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
 
 class StatsController {
 
@@ -113,5 +115,52 @@ class StatsController {
         }
         /** @var BigInteger $total */
         return response(['total' => (float) $total->__toString()],200);
+    }
+
+    public function entries(Request $request, Response $response, $arg) {
+
+        $body = $request->getParsedBody();
+
+        $startDate = Carbon::parse($body['date']['start']) ?? Carbon::now()->firstOfMonth();
+        $endDate = Carbon::parse($body['date']['end']) ?? Carbon::now()->lastOfMonth();
+
+        $startDatePrev = clone $startDate;
+        $startDatePrev->subDays($endDate->diffInDays($startDate) * -1);
+
+        $endDatePrev = clone $endDate;
+        $endDatePrev->subDays($endDate->diffInDays($startDate) * -1);
+
+        $options = [
+            'types' => $body['type'] ?? 'expenses',
+            'categories' => $body['categories'] ?? [],
+            'accounts' => $body['accounts'] ?? [],
+            'tags' => $body['tags'] ?? [],
+            'payment_methods' => $body['payment_methods'] ?? [],
+            'currencies' => $body['currencies'] ?? null,
+        ];
+
+        $entriesRepository = new StatsRepository($arg['wsid'], $startDate, $endDate);
+        $entries = $entriesRepository->statsByFilters($options);
+
+        $entriesPrevRepository = new StatsRepository($arg['wsid'], $startDatePrev, $endDatePrev);
+        foreach ( $entriesPrevRepository->statsByFilters($options) as $entry) {
+            $entryPrev[$entry->category_uuid] = $entry;
+        }
+
+        $tableChart = new TableChart();
+
+        foreach ($entries as $entry) {
+            $tableChart->addRows(
+                new TableRowChart(
+                    $entry->total,
+                    $entryPrev[$entry->category_uuid]->total,
+                    $entry->category_slug,
+                    $entry->category_type
+                )
+            );
+        }
+
+        return response($tableChart->toArray(),200);
+
     }
 }

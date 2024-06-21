@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b4cf0f451393cdd71448dfc0e918236e",
+    "content-hash": "684b0f10719d1869c286e732b249ce44",
     "packages": [
         {
             "name": "brick/math",
@@ -1596,6 +1596,53 @@
                 "source": "https://github.com/logtail/monolog-logtail/tree/v3.1.0"
             },
             "time": "2024-03-20T14:21:21+00:00"
+        },
+        {
+            "name": "mlab/math-percentage",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mlabfactory/math-percentage.git",
+                "reference": "55c3aa396b86e2b4af7f0fcddccbcc30a8b4674d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mlabfactory/math-percentage/zipball/55c3aa396b86e2b4af7f0fcddccbcc30a8b4674d",
+                "reference": "55c3aa396b86e2b4af7f0fcddccbcc30a8b4674d",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^11.1.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Mlab\\MathPercentage\\": "src/"
+                }
+            },
+            "license": [
+                "APACHE 3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Marco De Felice",
+                    "email": "tech@mlabfactory.it"
+                }
+            ],
+            "description": "Built-in PHP Math Functions: PHP offers functions like round and number_format for working with percentages. You can calculate the percentage manually and then use these functions to format the result as needed.",
+            "keywords": [
+                "math",
+                "percentage",
+                "php"
+            ],
+            "support": {
+                "source": "https://github.com/mlabfactory/math-percentage/tree/v1.0.1",
+                "issues": "https://github.com/mlabfactory/math-percentage/issues"
+            },
+            "time": "2024-06-21T13:46:49+00:00"
         },
         {
             "name": "monolog/monolog",
