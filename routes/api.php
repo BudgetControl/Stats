@@ -18,4 +18,4 @@ $app->get('/{wsid}/chart/apple-pie/expenses/label', \Budgetcontrol\Stats\Control
 
 $app->post('/{wsid}/stats/entries', \Budgetcontrol\Stats\Controller\StatsController::class . ':entries');
 
-$app->get('monitor', \Budgetcontrol\Stats\Controller\Controller::class . ':monitor');
+$app->get('/monitor', \Budgetcontrol\Stats\Controller\Controller::class . ':monitor');
