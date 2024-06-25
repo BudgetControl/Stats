@@ -41,7 +41,8 @@ class TableChartController extends ChartController
                     new TableRowChart(
                         $category->total,
                         $expensesVluePrev->total ?? 0,
-                        $category->category_name
+                        $category->category_name,
+                        'expenses',
                     )
                 );
             }
