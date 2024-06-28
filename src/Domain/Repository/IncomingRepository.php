@@ -42,6 +42,7 @@ class IncomingRepository extends StatsRepository {
             SELECT 
             c.id AS category_id,
             c.name AS category_name,
+            c.slug AS category_slug,
             COALESCE(SUM(e.amount), 0) AS total
             FROM 
                 entries AS e
@@ -63,7 +64,7 @@ class IncomingRepository extends StatsRepository {
                 AND e.date_time < '$endDate'
                 AND a.workspace_id = $wsId
             GROUP BY
-                c.id, c.name;
+                c.id, c.name, c.slug;
         ";
 
         $result = DB::select($query);

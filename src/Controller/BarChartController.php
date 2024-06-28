@@ -32,14 +32,14 @@ class BarChartController extends ChartController
             );
 
             foreach($incomingRepository->expensesByCategory() as $category) {
-                if ($categories && !in_array($category->category_name, $categories)) {
+                if ($categories && !in_array($category->category_slug, $categories)) {
                     continue;
                 }
 
                 $barChart->addBar(
                     new BarChartBar(
                         $category->total,
-                        $category->category_name,
+                        $category->category_slug,
                         $category->category_id
                     )
                 );
