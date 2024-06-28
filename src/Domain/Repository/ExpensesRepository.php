@@ -67,7 +67,7 @@ class ExpensesRepository extends StatsRepository{
                 AND e.workspace_id = $wsId
                 $addConditions
             GROUP BY
-                c.id, c.name;
+                c.id, c.name, c.slug;
         ";
 
         $result = DB::select($query);

@@ -21,8 +21,8 @@ class LineChartController extends ChartController
         $params = $request->getQueryParams();
 
         $lineChart = new LineChart();
-        $incomingSeries = new LineChartSeries('Incoming');
-        $expensesSeries = new LineChartSeries('Expenses');
+        $incomingSeries = new LineChartSeries('incoming');
+        $expensesSeries = new LineChartSeries('expenses');
 
         foreach ($params['date_time'] as $_ => $value) {
 

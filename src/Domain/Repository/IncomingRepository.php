@@ -64,7 +64,7 @@ class IncomingRepository extends StatsRepository {
                 AND e.date_time < '$endDate'
                 AND a.workspace_id = $wsId
             GROUP BY
-                c.id, c.name;
+                c.id, c.name, c.slug;
         ";
 
         $result = DB::select($query);
