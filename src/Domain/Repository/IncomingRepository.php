@@ -42,6 +42,7 @@ class IncomingRepository extends StatsRepository {
             SELECT 
             c.id AS category_id,
             c.name AS category_name,
+            c.slug AS category_slug,
             COALESCE(SUM(e.amount), 0) AS total
             FROM 
                 entries AS e
