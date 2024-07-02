@@ -280,7 +280,8 @@ class StatsRepository
                 c.uuid AS category_uuid,
                 cc.type AS category_type,
                 c.slug AS category_slug,
-                COALESCE(SUM(e.amount), 0) AS total 
+                COALESCE(SUM(e.amount), 0) AS total,
+                c.id AS category_id
             FROM 
                 sub_categories AS c
             JOIN 
