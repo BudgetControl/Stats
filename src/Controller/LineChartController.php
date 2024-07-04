@@ -80,6 +80,7 @@ class LineChartController extends ChartController
 
         $lineChart->addSeries($incomingSeries);
         $lineChart->addSeries($expensesSeries);
+        $lineChart->addSeries($debitSeries);
         $results = $lineChart->toArray();
 
         return response($results, 200);
