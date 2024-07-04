@@ -16,7 +16,7 @@ class ExpensesRepository extends StatsRepository{
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
-            WHERE e.type in ('expenses', 'debit')
+            WHERE e.type in ('expenses')
             AND e.amount < 0
             AND e.exclude_from_stats = 0
             AND e.deleted_at is null
@@ -56,7 +56,7 @@ class ExpensesRepository extends StatsRepository{
             JOIN 
                 sub_categories AS c ON e.category_id = c.id
             WHERE 
-                e.type IN ('expenses', 'debit')
+                e.type IN ('expenses')
                 AND e.amount < 0
                 AND e.exclude_from_stats = 0
                 AND e.deleted_at IS NULL
@@ -98,7 +98,7 @@ class ExpensesRepository extends StatsRepository{
             LEFT JOIN 
                 labels AS l ON el.labels_id = l.id
             WHERE 
-                e.type IN ('expenses', 'debit')
+                e.type IN ('expenses')
                 AND e.amount < 0
                 AND e.exclude_from_stats = 0
                 AND e.deleted_at IS NULL

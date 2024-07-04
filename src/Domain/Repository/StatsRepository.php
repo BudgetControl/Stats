@@ -51,7 +51,7 @@ class StatsRepository
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
             JOIN accounts AS a ON e.account_id = a.id
-            WHERE e.type in ('expenses', 'incoming', 'debit')
+            WHERE e.type in ('expenses', 'incoming')
             AND a.installement = 0
             AND e.exclude_from_stats = 0
             AND a.exclude_from_stats = 0
