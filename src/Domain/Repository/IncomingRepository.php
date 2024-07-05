@@ -14,7 +14,7 @@ class IncomingRepository extends StatsRepository {
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
-            WHERE e.type in ('incoming', 'debit')
+            WHERE e.type in ('incoming')
             AND e.amount > 0
             AND e.exclude_from_stats = 0
             AND e.deleted_at is null
@@ -51,7 +51,7 @@ class IncomingRepository extends StatsRepository {
             JOIN 
                 sub_categories AS c ON e.category_id = c.id
             WHERE 
-                e.type IN ('incoming', 'debit')
+                e.type IN ('incoming')
                 AND e.amount > 0
                 AND a.installement = 0
                 AND e.exclude_from_stats = 0
@@ -92,7 +92,7 @@ class IncomingRepository extends StatsRepository {
             LEFT JOIN 
                 labels AS l ON el.labels_id = l.id
             WHERE 
-                e.type IN ('incoming', 'debit')
+                e.type IN ('incoming')
                 AND e.amount > 0
                 AND a.installement = 0
                 AND e.exclude_from_stats = 0

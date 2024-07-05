@@ -10,6 +10,7 @@ use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartPoint;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartSeries;
+use Budgetcontrol\Stats\Domain\Repository\DebitRepository;
 use Illuminate\Support\Carbon;
 
 class LineChartController extends ChartController
@@ -23,12 +24,14 @@ class LineChartController extends ChartController
         $lineChart = new LineChart();
         $incomingSeries = new LineChartSeries('incoming');
         $expensesSeries = new LineChartSeries('expenses');
+        $debitSeries = new LineChartSeries('debit');
 
         foreach ($params['date_time'] as $_ => $value) {
 
             $startDate = Carbon::rawParse($value['start']);
             $endDate = Carbon::rawParse($value['end']);
 
+            // incoming
             $incomingRepository = new IncomingRepository(
                 $arg['wsid'],
                 $startDate,
@@ -43,7 +46,7 @@ class LineChartController extends ChartController
                 )
             );
 
-
+            // expenses
             $expensesRepository = new ExpensesRepository(
                 $arg['wsid'],
                 $startDate,
@@ -58,10 +61,26 @@ class LineChartController extends ChartController
                 )
             );
 
+            // debit
+            $debitRepository = new DebitRepository(
+                $arg['wsid'],
+                $startDate,
+                $endDate
+            );
+
+            $debitSeries->addDataPoint(
+                new LineChartPoint(
+                    $debitRepository->statsDebits()['total'],
+                    5000,
+                    $startDate->format('M')
+                )
+            );
+
         }
 
         $lineChart->addSeries($incomingSeries);
         $lineChart->addSeries($expensesSeries);
+        $lineChart->addSeries($debitSeries);
         $results = $lineChart->toArray();
 
         return response($results, 200);
