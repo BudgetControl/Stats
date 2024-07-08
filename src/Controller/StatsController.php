@@ -124,12 +124,6 @@ class StatsController {
         $startDate = Carbon::parse($body['date']['start']) ?? Carbon::now()->firstOfMonth();
         $endDate = Carbon::parse($body['date']['end']) ?? Carbon::now()->lastOfMonth();
 
-        $startDatePrev = clone $startDate;
-        $startDatePrev->subDays($endDate->diffInDays($startDate) * -1);
-
-        $endDatePrev = clone $endDate;
-        $endDatePrev->subDays($endDate->diffInDays($startDate) * -1);
-
         $options = [
             'types' => $body['type'] ?? 'expenses',
             'categories' => $body['categories'] ?? [],
@@ -142,18 +136,13 @@ class StatsController {
         $entriesRepository = new StatsRepository($arg['wsid'], $startDate, $endDate);
         $entries = $entriesRepository->statsByFilters($options);
 
-        $entriesPrevRepository = new StatsRepository($arg['wsid'], $startDatePrev, $endDatePrev);
-        foreach ( $entriesPrevRepository->statsByFilters($options) as $entry) {
-            $entryPrev[$entry->category_uuid] = $entry;
-        }
-
         $tableChart = new TableChart();
 
         foreach ($entries as $entry) {
             $tableChart->addRows(
                 new TableRowChart(
                     $entry->total,
-                    $entryPrev[$entry->category_uuid]->total,
+                    null,
                     $entry->category_slug,
                     $entry->category_type
                 )
