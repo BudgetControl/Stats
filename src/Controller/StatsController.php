@@ -111,7 +111,7 @@ class StatsController {
         $installement_values = $repository->installementValues();
         $total = BigNumber::sum($planned->balance_without_installement, $planned->planned_amount_total);
         foreach($installement_values as $value) {
-            $total = BigNumber::sum($total, $value->installementValue);
+            $total = BigNumber::sum($total, $value->installement_value);
         }
         /** @var BigInteger $total */
         return response(['total' => (float) $total->__toString()],200);

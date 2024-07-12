@@ -47,7 +47,7 @@ class IncomingRepository extends StatsRepository {
             FROM 
                 entries AS e
             JOIN 
-                accounts AS a ON e.account_id = a.id
+                wallets AS a ON e.account_id = a.id
             JOIN 
                 sub_categories AS c ON e.category_id = c.id
             WHERE 
@@ -86,7 +86,7 @@ class IncomingRepository extends StatsRepository {
             FROM 
                 entries AS e
             JOIN 
-                accounts AS a ON e.account_id = a.id
+                wallets AS a ON e.account_id = a.id
             LEFT JOIN 
                 entry_labels AS el ON e.id = el.entry_id
             LEFT JOIN 
