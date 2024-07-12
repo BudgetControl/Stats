@@ -50,7 +50,7 @@ class StatsRepository
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
-            JOIN accounts AS a ON e.account_id = a.id
+            JOIN wallets AS a ON e.account_id = a.id
             WHERE e.type in ('expenses', 'incoming')
             AND a.installement = 0
             AND e.exclude_from_stats = 0
@@ -82,7 +82,7 @@ class StatsRepository
 
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
-            FROM accounts
+            FROM wallets
             WHERE workspace_id = $wsId
             AND installement = 0
             AND deleted_at is null
@@ -106,7 +106,7 @@ class StatsRepository
         $wsId = $this->wsId;
 
         $query = "
-            SELECT * FROM accounts WHERE workspace_id = $wsId AND deleted_at is null;
+            SELECT * FROM wallets WHERE workspace_id = $wsId AND deleted_at is null;
         ";
 
         $result = DB::select($query);
@@ -126,7 +126,7 @@ class StatsRepository
 
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
-            FROM accounts
+            FROM wallets
             WHERE workspace_id = $wsId AND deleted_at is null AND exclude_from_stats = 0;
         ";
 
@@ -151,11 +151,11 @@ class StatsRepository
 
         $query = "
         SELECT 
-        COALESCE(SUM(CASE WHEN a.installement = 1  and a.balance < 0 THEN a.installementValue END), 0) AS installement_balance,
+        COALESCE(SUM(CASE WHEN a.installement = 1  and a.balance < 0 THEN a.installement_value END), 0) AS installement_balance,
         COALESCE(SUM(CASE WHEN a.installement = 0 THEN a.balance END), 0) AS balance_without_installement,
         COALESCE(SUM(CASE WHEN e.planned = 1 THEN e.amount END), 0) AS planned_amount_total
         FROM 
-            accounts AS a
+            wallets AS a
         LEFT JOIN (
             SELECT 
                 account_id,
@@ -196,7 +196,7 @@ class StatsRepository
         $wsId = $this->wsId;
 
         $date = Carbon::now()->toAtomString();
-        $query = "select installementValue from accounts where installement = 1 and deleted_at is null and date >= '$date'  AND MONTH(date) = MONTH(CURRENT_DATE()) and workspace_id = $wsId and balance < installementValue;";
+        $query = "select installement_value from wallets where installement = 1 and deleted_at is null and invoice_date >= '$date'  AND MONTH(invoice_date) = MONTH(CURRENT_DATE()) and workspace_id = $wsId and balance < installement_value;";
         $result = DB::select($query);
 
         return $result;
