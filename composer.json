@@ -6,6 +6,14 @@
         "mlab/math-percentage": {
             "type": "github",
             "url": "https://github.com/mlabfactory/math-percentage.git"
+        },
+        "budgetcontrol/cryptable" : {
+            "type":"vcs",
+            "url":"git@github.com:BudgetControl/LibsCryptable.git"
+        },
+        "budgetcontrol/library" : {
+            "type":"vcs",
+            "url":"https://github.com/BudgetControl/Library.git"
         }
     },
     "require": {
@@ -28,7 +36,9 @@
         "webit/bcmath": "^2.0",
         "nesbot/carbon": "^3.2",
         "logtail/monolog-logtail": "^3.1",
-        "mlab/math-percentage": "v1.0.*"
+        "mlab/math-percentage": "v1.0.*",
+        "budgetcontrol/cryptable": "^v0.1",
+        "budgetcontrol/library": "^v1.0"
     },
     "require-dev": {
         "nikic/php-parser": "^5.0",

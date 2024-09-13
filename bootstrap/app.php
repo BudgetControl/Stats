@@ -26,8 +26,12 @@ $capsule->setAsGlobal();
 // Set up the logger
 require_once __DIR__ . '/../config/logger.php';
 
+// Set up the Cryptable service
+require_once __DIR__ . '/../config/cryptable.php';
+
 // Set up the Facade application
 Facade::setFacadeApplication([
     'log' => $logger,
     'date' => new Date(),
+    'crypt' => $crypt
 ]);

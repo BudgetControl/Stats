@@ -3,6 +3,7 @@
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Brick\Math\BigNumber;
+use Budgetcontrol\Stats\Domain\Model\Wallet;
 use DateTime;
 use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
@@ -105,13 +106,11 @@ class StatsRepository
     {
         $wsId = $this->wsId;
 
-        $query = "
-            SELECT * FROM wallets WHERE workspace_id = $wsId AND deleted_at is null;
-        ";
-
-        $result = DB::select($query);
-
-        return $result;
+        $wallets = Wallet::where('workspace_id', $wsId)
+            ->where('deleted_at', null)
+            ->get();
+        
+        return $wallets->toArray();
     }
 
     /**
