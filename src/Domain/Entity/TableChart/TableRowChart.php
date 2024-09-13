@@ -1,5 +1,7 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Entity\TableChart;
+
+use Budgetcontrol\Library\Entity\Entry;
 use DivisionByZeroError;
 use Mlab\MathPercentage\Service\PercentCalculator;
 
@@ -29,7 +31,17 @@ final class TableRowChart
             if($this->amount == 0 && $this->prevAmount == 0) {
                 $percentage = 0;
             } else {
-                $percentage = ($this->amount > $this->prevAmount) ? 100 : -100;
+
+                switch($this->type) {
+                    case Entry::expenses->value:
+                        $percentage = ($this->amount < $this->prevAmount) ? 100 : -100;
+                        break;
+                    case Entry::incoming->value:
+                        $percentage = ($this->amount > $this->prevAmount) ? 100 : -100;
+                        break;
+                    default:
+                        $percentage = ($this->amount < $this->prevAmount) ? 100 : -100;
+                }
             }
         }
 
