@@ -31,18 +31,21 @@ final class TableRowChart
             if($this->amount == 0 && $this->prevAmount == 0) {
                 $percentage = 0;
             } else {
-
-                switch($this->type) {
-                    case Entry::expenses->value:
-                        $percentage = ($this->amount < $this->prevAmount) ? 100 : -100;
-                        break;
-                    case Entry::incoming->value:
-                        $percentage = ($this->amount > $this->prevAmount) ? 100 : -100;
-                        break;
-                    default:
-                        $percentage = ($this->amount < $this->prevAmount) ? 100 : -100;
-                }
+                $percentage = ($this->amount > $this->prevAmount) ? 100 : -100;
             }
+        }
+
+        if($percentage == INF || $percentage == -INF) {
+            $percentage = 0;
+        }
+
+        switch($this->type) {
+            case Entry::expenses->value:
+                $percentage = $percentage * -1;
+                break;
+            default:
+                $percentage = $percentage;
+                break;
         }
 
         return $percentage;
