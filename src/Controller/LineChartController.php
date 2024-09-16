@@ -74,7 +74,7 @@ class LineChartController extends ChartController
 
             $debits = new BcMathNumber(0);
             $debits->add($debitRepository->statsDebits()['total']);
-            $debits->add($debitRepository->debitOfCreditCards()['total']);
+            $debits->add($debitRepository->debitOfCreditCards()['total'] * -1);
 
             $debitSeries->addDataPoint(
                 new LineChartPoint(
