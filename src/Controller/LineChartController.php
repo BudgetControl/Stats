@@ -11,7 +11,9 @@ use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartPoint;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartSeries;
 use Budgetcontrol\Stats\Domain\Repository\DebitRepository;
+use Budgetcontrol\Wallet\Facade\BcMath;
 use Illuminate\Support\Carbon;
+use Webit\Wrapper\BcMath\BcMathNumber;
 
 class LineChartController extends ChartController
 {
@@ -38,10 +40,12 @@ class LineChartController extends ChartController
                 $endDate
             );
 
+            $yValue = 5000; //FIXME:  hardcoded value
+
             $incomingSeries->addDataPoint(
                 new LineChartPoint(
                     $incomingRepository->statsIncoming()['total'],
-                    5000, //FIXME:  hardcoded value
+                    $yValue, 
                     $startDate->format('M')
                 )
             );
@@ -56,7 +60,7 @@ class LineChartController extends ChartController
             $expensesSeries->addDataPoint(
                 new LineChartPoint(
                     $expensesRepository->statsExpenses()['total'],
-                    5000,
+                    $yValue,
                     $startDate->format('M')
                 )
             );
@@ -68,10 +72,14 @@ class LineChartController extends ChartController
                 $endDate
             );
 
+            $debits = new BcMathNumber(0);
+            $debits->add($debitRepository->statsDebits()['total']);
+            $debits->add($debitRepository->debitOfCreditCards()['total']);
+
             $debitSeries->addDataPoint(
                 new LineChartPoint(
-                    $debitRepository->statsDebits()['total'],
-                    5000,
+                    $debits->toFloat(),
+                    $yValue,
                     $startDate->format('M')
                 )
             );

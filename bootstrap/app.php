@@ -4,6 +4,7 @@
 use \Illuminate\Support\Carbon as Date;
 use Illuminate\Support\Facades\Facade;
 use Monolog\Level;
+use Webit\Wrapper\BcMath\BcMathNumber;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -33,5 +34,6 @@ require_once __DIR__ . '/../config/cryptable.php';
 Facade::setFacadeApplication([
     'log' => $logger,
     'date' => new Date(),
-    'crypt' => $crypt
+    'crypt' => $crypt,
+    'bc-math' => new BcMathNumber(0)
 ]);
