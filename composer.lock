@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a9c6de38dbbd641c7a0e0efa480a6157",
+    "content-hash": "a7818935f7aa570e43ffd7e7e19082d1",
     "packages": [
         {
             "name": "brick/math",
@@ -113,19 +113,20 @@
         },
         {
             "name": "budgetcontrol/library",
-            "version": "v1.0.6",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/BudgetControl/Library.git",
-                "reference": "9b8a36fb62eff9472f6580ee06eb30ad44ce2bcb"
+                "reference": "61a00116bbeec8dff9cb9005d1c39ff3b60b3236"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/BudgetControl/Library/zipball/9b8a36fb62eff9472f6580ee06eb30ad44ce2bcb",
-                "reference": "9b8a36fb62eff9472f6580ee06eb30ad44ce2bcb",
+                "url": "https://api.github.com/repos/BudgetControl/Library/zipball/61a00116bbeec8dff9cb9005d1c39ff3b60b3236",
+                "reference": "61a00116bbeec8dff9cb9005d1c39ff3b60b3236",
                 "shasum": ""
             },
             "require": {
+                "budgetcontrol/cryptable": "^v0.1",
                 "illuminate/database": "11.19",
                 "ramsey/uuid": "^4.7",
                 "webit/bcmath": "^2.0"
@@ -143,9 +144,9 @@
                 }
             ],
             "support": {
-                "source": "https://github.com/BudgetControl/Library/tree/v1.0.6"
+                "source": "https://github.com/BudgetControl/Library/tree/v1.1.0"
             },
-            "time": "2024-09-10T15:34:30+00:00"
+            "time": "2024-09-16T08:45:49+00:00"
         },
         {
             "name": "cakephp/chronos",

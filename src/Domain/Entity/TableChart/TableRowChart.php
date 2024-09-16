@@ -18,8 +18,8 @@ final class TableRowChart
         $this->amount = $amount;
         $this->prevAmount = $prevAmount;
         $this->label = $label;
-        $this->bounceRate = $this->bounceRate();
         $this->type = $type;
+        $this->bounceRate = $this->bounceRate();
     }
 
     private function bounceRate()

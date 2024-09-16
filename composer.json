@@ -38,7 +38,7 @@
         "logtail/monolog-logtail": "^3.1",
         "mlab/math-percentage": "v1.0.*",
         "budgetcontrol/cryptable": "^v0.1",
-        "budgetcontrol/library": "^v1.0"
+        "budgetcontrol/library": "^v1.1"
     },
     "require-dev": {
         "nikic/php-parser": "^5.0",
