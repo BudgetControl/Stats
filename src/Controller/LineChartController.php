@@ -11,9 +11,7 @@ use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartPoint;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartSeries;
 use Budgetcontrol\Stats\Domain\Repository\DebitRepository;
-use Budgetcontrol\Wallet\Facade\BcMath;
 use Illuminate\Support\Carbon;
-use Webit\Wrapper\BcMath\BcMathNumber;
 
 class LineChartController extends ChartController
 {
@@ -35,53 +33,53 @@ class LineChartController extends ChartController
 
             // incoming
             $incomingRepository = new IncomingRepository(
-                $arg['wsid'],
-                $startDate,
-                $endDate
-            );
-
-            $yValue = 5000; //FIXME:  hardcoded value
-
-            $incomingSeries->addDataPoint(
-                new LineChartPoint(
-                    $incomingRepository->statsIncoming()['total'],
-                    $yValue, 
-                    $startDate->format('M')
-                )
+            $arg['wsid'],
+            $startDate,
+            $endDate
             );
 
             // expenses
             $expensesRepository = new ExpensesRepository(
-                $arg['wsid'],
-                $startDate,
-                $endDate
-            );
-
-            $expensesSeries->addDataPoint(
-                new LineChartPoint(
-                    $expensesRepository->statsExpenses()['total'],
-                    $yValue,
-                    $startDate->format('M')
-                )
+            $arg['wsid'],
+            $startDate,
+            $endDate
             );
 
             // debit
             $debitRepository = new DebitRepository(
-                $arg['wsid'],
-                $startDate,
-                $endDate
+            $arg['wsid'],
+            $startDate,
+            $endDate
             );
 
-            $debits = new BcMathNumber(0);
-            $debits->add($debitRepository->statsDebits()['total']);
-            $debits->add($debitRepository->debitOfCreditCards()['total'] * -1);
+            $yValue = max(
+            $incomingRepository->statsIncoming()['total'],
+            $expensesRepository->statsExpenses()['total'],
+            $debitRepository->statsDebits()['total']
+            );
+
+            $incomingSeries->addDataPoint(
+            new LineChartPoint(
+                $incomingRepository->statsIncoming()['total'],
+                $yValue, 
+                $startDate->format('M')
+            )
+            );
+
+            $expensesSeries->addDataPoint(
+            new LineChartPoint(
+                $expensesRepository->statsExpenses()['total'],
+                $yValue,
+                $startDate->format('M')
+            )
+            );
 
             $debitSeries->addDataPoint(
-                new LineChartPoint(
-                    $debits->toFloat(),
-                    $yValue,
-                    $startDate->format('M')
-                )
+            new LineChartPoint(
+                $debitRepository->statsDebits()['total'],
+                $yValue,
+                $startDate->format('M')
+            )
             );
 
         }
