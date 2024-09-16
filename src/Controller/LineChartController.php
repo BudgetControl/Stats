@@ -33,47 +33,53 @@ class LineChartController extends ChartController
 
             // incoming
             $incomingRepository = new IncomingRepository(
-                $arg['wsid'],
-                $startDate,
-                $endDate
-            );
-
-            $incomingSeries->addDataPoint(
-                new LineChartPoint(
-                    $incomingRepository->statsIncoming()['total'],
-                    5000, //FIXME:  hardcoded value
-                    $startDate->format('M')
-                )
+            $arg['wsid'],
+            $startDate,
+            $endDate
             );
 
             // expenses
             $expensesRepository = new ExpensesRepository(
-                $arg['wsid'],
-                $startDate,
-                $endDate
-            );
-
-            $expensesSeries->addDataPoint(
-                new LineChartPoint(
-                    $expensesRepository->statsExpenses()['total'],
-                    5000,
-                    $startDate->format('M')
-                )
+            $arg['wsid'],
+            $startDate,
+            $endDate
             );
 
             // debit
             $debitRepository = new DebitRepository(
-                $arg['wsid'],
-                $startDate,
-                $endDate
+            $arg['wsid'],
+            $startDate,
+            $endDate
+            );
+
+            $yValue = max(
+            $incomingRepository->statsIncoming()['total'],
+            $expensesRepository->statsExpenses()['total'],
+            $debitRepository->statsDebits()['total']
+            );
+
+            $incomingSeries->addDataPoint(
+            new LineChartPoint(
+                $incomingRepository->statsIncoming()['total'],
+                $yValue, 
+                $startDate->format('M')
+            )
+            );
+
+            $expensesSeries->addDataPoint(
+            new LineChartPoint(
+                $expensesRepository->statsExpenses()['total'],
+                $yValue,
+                $startDate->format('M')
+            )
             );
 
             $debitSeries->addDataPoint(
-                new LineChartPoint(
-                    $debitRepository->statsDebits()['total'],
-                    5000,
-                    $startDate->format('M')
-                )
+            new LineChartPoint(
+                $debitRepository->statsDebits()['total'],
+                $yValue,
+                $startDate->format('M')
+            )
             );
 
         }
