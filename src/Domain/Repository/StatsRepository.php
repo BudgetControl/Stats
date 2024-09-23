@@ -8,6 +8,7 @@ use DateTime;
 use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
 use Carbon\Carbon;
+use stdClass;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 class StatsRepository
@@ -28,7 +29,7 @@ class StatsRepository
     {
         $wsid = @Workspace::where('uuid', $wsId)->first()->id;
 
-        if (is_null($wsid)) {
+        if (is_null($wsid)) { 
             throw new NotFoundResourceException('Workspace not found', 404);
         }
 
@@ -329,5 +330,104 @@ class StatsRepository
         }
 
         return $results;
+    }
+
+    /**
+     * Retrieves statistics by category slug.
+     *
+     * @param string $categorySlug The slug of the category.
+     * @param int $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
+     * @return stdClass
+     */
+    public function statsByCategories(string $categorySlug, int $isPlanned = 0): stdClass
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $query = "
+            SELECT 
+                c.uuid AS category_uuid,
+                cc.type AS category_type,
+                c.slug AS category_slug,
+                COALESCE(SUM(e.amount), 0) AS total,
+                c.id AS category_id
+            FROM 
+                sub_categories AS c
+            JOIN 
+                categories AS cc ON c.category_id = cc.id
+            LEFT JOIN 
+                entries AS e ON e.category_id = c.id
+                AND e.exclude_from_stats = 0
+                AND e.deleted_at IS NULL
+                AND e.confirmed = 1
+                AND e.planned in (0,$isPlanned)
+                AND e.date_time >= '$startDate'
+                AND e.date_time < '$endDate'
+                AND e.workspace_id = $wsId
+                AND e.type IN ('expenses', 'incoming')
+            WHERE 
+                c.slug = '$categorySlug'
+            GROUP BY 
+                cc.type, c.name, c.id
+            ORDER BY
+                cc.type desc;";
+
+        $result = DB::select($query);
+
+        return $result[0];
+    }
+
+    /**
+     * Retrieves the loan of credit cards.
+     *
+     * @return mixed The loan of credit cards.
+     */
+    public function loanOfCreditCards()
+    {
+        $wsId = $this->wsId;
+
+        $query = "
+            SELECT 
+                COALESCE(SUM(CASE WHEN a.installement = 1  and a.balance < 0 THEN a.installement_value END), 0) AS total
+            FROM 
+                wallets AS a
+            WHERE 
+                a.deleted_at IS NULL
+                AND a.exclude_from_stats = 0
+                AND a.workspace_id = $wsId;
+        ";
+
+        $result = DB::select($query);
+
+        return $result[0];
+    }
+
+    /**
+     * Retrieves the planned entries from the stats repository.
+     *
+     * @return stdClass
+     */
+    public function plannedEntries(): stdClass {
+        $wsId = $this->wsId;
+
+        $query = "
+            SELECT 
+                COALESCE(SUM(CASE WHEN e.planned = 1 THEN e.amount END), 0) AS total
+            FROM 
+                entries AS e
+            WHERE 
+                e.planned = 1
+                AND MONTH(e.date_time) = MONTH(CURRENT_DATE())
+                AND YEAR(e.date_time) = YEAR(CURRENT_DATE())
+                AND e.confirmed = 1
+                AND e.deleted_at IS NULL
+                AND e.exclude_from_stats = 0
+                AND e.workspace_id = $wsId;
+        ";
+
+        $result = DB::select($query);
+
+        return $result[0];
     }
 }

@@ -23,10 +23,14 @@ This repository contains the code of stats about BudgetControl application.
 
 5. Open your browser and visit [http://localhost:8084](http://localhost:8084) to access the BudgetControl application.
 
-## Task Commands
+## Build dev enviroment
+- docker-compose -f docker-compose.yml -f docker-compose.db.yml up -d
+- docker container cp bin/apache/default.conf budgetcontrol-ms-stats:/etc/apache2/sites-available/budgetcontrol.cloud.conf
+- docker container exec budgetcontrol-ms-stats service apache2 restart
 
-- `task build:dev`: Install and build dev application.
-- `task build`: Install and build base application.
+## Run PHP Tests
+- docker exec budgetcontrol-ms-stats bash -c "vendor/bin/phinx rollback -t 0 && vendor/bin/phinx migrate && vendor/bin/phinx seed:run" 
+- docker exec budgetcontrol-ms-stats vendor/bin/phpunit test
 
 ## Contributing
 
