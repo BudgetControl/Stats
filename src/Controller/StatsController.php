@@ -181,6 +181,26 @@ class StatsController {
 
     }
 
+    public function averageSavings(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now()->firstOfYear();
+        $endDate = Carbon::now()->lastOfYear();
+
+        $repository = new StatsRepository(
+            $arg['wsid'],
+            $startDate,
+            $endDate
+        );
+        $result = $repository->statsByCategories('savings', 1);
+        $total = $result->total;
+        $currentAmount = round($total / 12);
+
+        return response([
+            "total" => $currentAmount,
+        ],200);
+
+    }
+
     /**
      * Calculate the average savings.
      *
