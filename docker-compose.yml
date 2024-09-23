@@ -3,12 +3,14 @@ version: '2.2'
 services:
     bemodule:
       container_name: budgetcontrol-ms-stats
-      image: budgetcontrol/core:v2.2
+      image: mlabfactory/php8-apache:v1.2-xdebug
       volumes:
         - ./:/var/www/workdir
       networks:
         - budgetcontrol_network
       restart: unless-stopped
+      ports:
+        - "8084:80"
 
 networks:
   budgetcontrol_network:

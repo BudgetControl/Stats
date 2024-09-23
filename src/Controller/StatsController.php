@@ -152,4 +152,84 @@ class StatsController {
         return response($tableChart->toArray(),200);
 
     }
+
+    public function averageExpenses(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now()->firstOfYear();
+        $endDate = Carbon::now()->lastOfYear();
+
+        $repository = new ExpensesRepository($arg['wsid'],$startDate,$endDate);
+        $currentAmount = round($repository->statsExpenses()['total'] / 12);
+
+        return response([
+            "total" => $currentAmount,
+        ],200);
+
+    }
+
+    public function averageIncoming(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now()->firstOfYear();
+        $endDate = Carbon::now()->lastOfYear();
+
+        $repository = new IncomingRepository($arg['wsid'],$startDate,$endDate);
+        $currentAmount = round($repository->statsIncoming()['total'] / 12);
+
+        return response([
+            "total" => $currentAmount,
+        ],200);
+
+    }
+
+    /**
+     * Calculate the average savings.
+     *
+     * @param Request $request The HTTP request object.
+     * @param Response $response The HTTP response object.
+     * @param mixed $arg Additional arguments.
+     * @return Response
+     */
+    public function totalLoanInstallmentsOfCurrentMonth(Request $request, Response $response, $arg): Response {
+
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
+
+        $repository = new StatsRepository(
+            $arg['wsid'],
+            $startDate,
+            $endDate
+        );
+        $result = $repository->statsByCategories('loans_interest', 1);
+        $total = $result->total;
+
+        //get load on creditCards
+        $creditCards = $repository->loanOfCreditCards();
+        $total = BigNumber::sum($total, $creditCards->total);
+        
+
+        return response([
+            "total" => $total,
+        ],200);
+
+    }
+
+    public function totalPlannedRemainingOfCurrentMonth(Request $request, Response $response, $arg): Response {
+
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
+
+        $repository = new StatsRepository(
+            $arg['wsid'],
+            $startDate,
+            $endDate
+        );
+        $result = $repository->plannedEntries();
+        $total = $result->total;
+
+        return response([
+            "total" => $total,
+        ],200);
+
+    }
+    
 }
