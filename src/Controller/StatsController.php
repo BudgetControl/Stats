@@ -3,6 +3,7 @@ namespace Budgetcontrol\Stats\Controller;
 
 use Brick\Math\BigNumber;
 use Brick\Math\BigInteger;
+use Brick\Math\Internal\Calculator\BcMathCalculator;
 use Illuminate\Support\Carbon;
 use Budgetcontrol\Stats\Helpers\PercentCalculator;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -12,6 +13,8 @@ use Budgetcontrol\Stats\Domain\Entity\TableChart\TableChart;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
+use Budgetcontrol\Wallet\Facade\BcMath;
+use Webit\Wrapper\BcMath\BcMathNumber;
 
 class StatsController {
 
@@ -220,12 +223,16 @@ class StatsController {
             $endDate
         );
         $result = $repository->statsByCategories('loans_interest', 1);
-        $total = $result->total;
 
         //get load on creditCards
+        $totalStats = new BcMathCalculator();
         $creditCards = $repository->loanOfCreditCards();
-        if($creditCards->invoice_date > Carbon::now() && $creditCards->invoice_date < Carbon::now()->lastOfMonth()) {
-            $total = BigNumber::sum($total, $creditCards->total);
+        $total = $result->total;
+        foreach($creditCards as $creditCard) {
+            if($creditCard->invoice_date > Carbon::now() && $creditCard->invoice_date < Carbon::now()->lastOfMonth()) {
+                $balance = $creditCard->balance > $creditCard->installement_value ? $creditCard->balance : $creditCard->installement_value;
+                $total = $totalStats->add($total, $balance);
+            }
         }
         
 
@@ -246,16 +253,21 @@ class StatsController {
             $endDate
         );
         $result = $repository->plannedExpenses();
-        $total = $result->total;
 
         //get load on creditCards
         $creditCards = $repository->loanOfCreditCards();
-        if($creditCards->invoice_date > Carbon::now() && $creditCards->invoice_date < Carbon::now()->lastOfMonth()) {
-            $total = BigNumber::sum($total, $creditCards->total);
+
+        $totalStats = new BcMathCalculator();
+        $total = $result->total;
+        foreach($creditCards as $creditCard) {
+            if($creditCard->invoice_date > Carbon::now() && $creditCard->invoice_date < Carbon::now()->lastOfMonth()) {
+                $balance = $creditCard->balance > $creditCard->installement_value ? $creditCard->balance : $creditCard->installement_value;
+                $total = $totalStats->add($total, $balance);
+            }
         }
 
         return response([
-            "total" => $total,
+            "total" => $total
         ],200);
 
     }
