@@ -31,6 +31,7 @@ class PlannedEntryRepository extends StatsRepository {
                 e.type in ('$expensesLabel')
                 AND e.deleted_at is null
                 AND e.planned in ('$plannedtypeLabelMonthly', '$plannedtypeLabelDaily', '$plannedtypeLabelWeekly')
+                AND e.end_date_time >= CURDATE()
                 AND e.workspace_id = $wsId;
         ";
 
