@@ -3,6 +3,7 @@
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Brick\Math\BigNumber;
+use Budgetcontrol\Library\Entity\Wallet as EntityWallet;
 use Budgetcontrol\Stats\Domain\Model\Wallet;
 use DateTime;
 use Illuminate\Database\Capsule\Manager as DB;
@@ -387,21 +388,29 @@ class StatsRepository
     {
         $wsId = $this->wsId;
 
+        $walletsType = [EntityWallet::creditCard->value, EntityWallet::creditCardRevolving->value];
+
         $query = "
             SELECT 
-                COALESCE(SUM(CASE WHEN a.installement = 1  and a.balance < 0 THEN a.installement_value END), 0) AS total,
-                a.invoice_date AS invoice_date
+                a.invoice_date,
+                a.installement_value,
+                a.balance
             FROM 
                 wallets AS a
             WHERE 
                 a.deleted_at IS NULL
                 AND a.exclude_from_stats = 0
+                AND ( 
+                    a.type = '".$walletsType[0]."'
+                    OR a.type = '".$walletsType[1]."' 
+                )
+                AND a.balance < 0
                 AND a.workspace_id = $wsId;
         ";
 
         $result = DB::select($query);
 
-        return $result[0];
+        return $result;
     }
 
     /**
