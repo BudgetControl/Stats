@@ -423,6 +423,7 @@ class StatsRepository
                 AND e.confirmed = 1
                 AND e.deleted_at IS NULL
                 AND e.exclude_from_stats = 0
+                AND e.type IN ('expenses')
                 AND e.workspace_id = $wsId;
         ";
 
