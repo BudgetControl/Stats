@@ -390,6 +390,7 @@ class StatsRepository
         $query = "
             SELECT 
                 COALESCE(SUM(CASE WHEN a.installement = 1  and a.balance < 0 THEN a.installement_value END), 0) AS total
+                a.invoice_date AS invoice_date
             FROM 
                 wallets AS a
             WHERE 
@@ -408,7 +409,7 @@ class StatsRepository
      *
      * @return stdClass
      */
-    public function plannedEntries(): stdClass {
+    public function plannedExpenses(): stdClass {
         $wsId = $this->wsId;
 
         $query = "
