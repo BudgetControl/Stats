@@ -3,18 +3,19 @@ namespace Budgetcontrol\Stats\Controller;
 
 use Brick\Math\BigNumber;
 use Brick\Math\BigInteger;
-use Brick\Math\Internal\Calculator\BcMathCalculator;
 use Illuminate\Support\Carbon;
+use Webit\Wrapper\BcMath\BcMathNumber;
+use Budgetcontrol\Wallet\Facade\BcMath;
 use Budgetcontrol\Stats\Helpers\PercentCalculator;
 use Psr\Http\Message\ResponseInterface as Response;
+use Brick\Math\Internal\Calculator\BcMathCalculator;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableChart;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
-use Budgetcontrol\Wallet\Facade\BcMath;
-use Webit\Wrapper\BcMath\BcMathNumber;
+use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
 
 class StatsController {
 
@@ -217,17 +218,17 @@ class StatsController {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new StatsRepository(
+        $repository = new PlannedEntryRepository(
             $arg['wsid'],
             $startDate,
             $endDate
         );
-        $result = $repository->statsByCategories('loans_interest', 1);
+        $result = $repository->getPlanedExpenses();
 
         //get load on creditCards
         $totalStats = new BcMathCalculator();
         $creditCards = $repository->loanOfCreditCards();
-        $total = $result->total;
+        $total = $result['total'];
         foreach($creditCards as $creditCard) {
             if($creditCard->invoice_date > Carbon::now() && $creditCard->invoice_date < Carbon::now()->lastOfMonth()) {
                 $balance = $creditCard->balance > $creditCard->installement_value ? $creditCard->balance : $creditCard->installement_value;
