@@ -224,7 +224,9 @@ class StatsController {
 
         //get load on creditCards
         $creditCards = $repository->loanOfCreditCards();
-        $total = BigNumber::sum($total, $creditCards->total);
+        if($creditCards->invoice_date > Carbon::now() && $creditCards->invoice_date < Carbon::now()->lastOfMonth()) {
+            $total = BigNumber::sum($total, $creditCards->total);
+        }
         
 
         return response([
@@ -243,8 +245,14 @@ class StatsController {
             $startDate,
             $endDate
         );
-        $result = $repository->plannedEntries();
+        $result = $repository->plannedExpenses();
         $total = $result->total;
+
+        //get load on creditCards
+        $creditCards = $repository->loanOfCreditCards();
+        if($creditCards->invoice_date > Carbon::now() && $creditCards->invoice_date < Carbon::now()->lastOfMonth()) {
+            $total = BigNumber::sum($total, $creditCards->total);
+        }
 
         return response([
             "total" => $total,
