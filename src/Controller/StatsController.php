@@ -253,20 +253,8 @@ class StatsController {
         );
         $result = $repository->plannedExpenses();
 
-        //get load on creditCards
-        $creditCards = $repository->loanOfCreditCards();
-
-        $totalStats = new BcMathCalculator();
-        $total = $result->total;
-        foreach($creditCards as $creditCard) {
-            if($creditCard->invoice_date > Carbon::now() && $creditCard->invoice_date < Carbon::now()->lastOfMonth()) {
-                $balance = $creditCard->balance > $creditCard->installement_value ? $creditCard->balance : $creditCard->installement_value;
-                $total = $totalStats->add($total, $balance);
-            }
-        }
-
         return response([
-            "total" => $total
+            "total" => $result->total
         ],200);
 
     }
