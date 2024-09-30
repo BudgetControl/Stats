@@ -8,14 +8,14 @@ $app->get('/{wsid}/expenses', \Budgetcontrol\Stats\Controller\StatsController::c
 $app->get('/{wsid}/total', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalOfCurrentMonth');
 $app->get('/{wsid}/wallets', \Budgetcontrol\Stats\Controller\StatsController::class . ':wallets');
 $app->get('/{wsid}/health', \Budgetcontrol\Stats\Controller\StatsController::class . ':health');
-$app->get('/{wsid}/planned', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalPlannedOfCurrentMonth'); //TODO:
+$app->get('/{wsid}/planned', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalPlannedOfCurrentMonth');
 
 $app->get('/{wsid}/average-expenses', \Budgetcontrol\Stats\Controller\StatsController::class . ':averageExpenses');
 $app->get('/{wsid}/average-incoming', \Budgetcontrol\Stats\Controller\StatsController::class . ':averageIncoming');
 $app->get('/{wsid}/average-savings', \Budgetcontrol\Stats\Controller\StatsController::class . ':averageSavings');
 $app->get('/{wsid}/total-loan-installments', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalLoanInstallmentsOfCurrentMonth');
-
-$app->get('/{wsid}/total/planned/remaining', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalPlannedRemainingOfCurrentMonth'); //TODO:
+$app->get('/{wsid}/total/planned/remaining', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalPlannedRemainingOfCurrentMonth');
+$app->get('/{wsid}/total/planned/monthly', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalPlannedMonthlyEntry');
 
 $app->get('/{wsid}/chart/line/incoming-expenses', \Budgetcontrol\Stats\Controller\LineChartController::class . ':incomingExpensesByDate');
 $app->get('/{wsid}/chart/bar/expenses/category', \Budgetcontrol\Stats\Controller\BarChartController::class . ':expensesCategoryByDate');
