@@ -5,7 +5,6 @@ use Brick\Math\BigNumber;
 use Brick\Math\BigInteger;
 use Illuminate\Support\Carbon;
 use Webit\Wrapper\BcMath\BcMathNumber;
-use Budgetcontrol\Wallet\Facade\BcMath;
 use Budgetcontrol\Stats\Helpers\PercentCalculator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Brick\Math\Internal\Calculator\BcMathCalculator;
@@ -17,7 +16,7 @@ use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
 use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
 
-class StatsController {
+class StatsController extends Controller {
 
     public function incomingOfCurrentMonth(Request $request, Response $response, $arg) {
         
@@ -223,7 +222,7 @@ class StatsController {
             $startDate,
             $endDate
         );
-        $result = $repository->getPlanedExpenses();
+        $result = $repository->getPlanedMonthlyExpenses();
 
         //get load on creditCards
         $totalStats = new BcMathCalculator();
@@ -243,6 +242,14 @@ class StatsController {
 
     }
 
+    /**
+     * Calculate the total planned remaining amount for the current month.
+     *
+     * @param Request $request The HTTP request object.
+     * @param Response $response The HTTP response object.
+     * @param mixed $arg Additional arguments.
+     * @return Response The HTTP response object.
+     */
     public function totalPlannedRemainingOfCurrentMonth(Request $request, Response $response, $arg): Response {
 
         $startDate = Carbon::now()->firstOfMonth();
@@ -269,6 +276,50 @@ class StatsController {
 
         return response([
             "total" => $total
+        ],200);
+
+    }
+
+    /**
+     * Calculate the total planned monthly entry.
+     *
+     * @param Request $request The HTTP request object.
+     * @param Response $response The HTTP response object.
+     * @param mixed $arg Additional arguments.
+     * @return void
+     */
+    public function totalPlannedMonthlyEntry(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
+
+        $repository = new PlannedEntryRepository(
+            $arg['wsid'],
+            $startDate,
+            $endDate
+        );
+        $monthly = $repository->getPlanedMonthlyExpenses();
+        $weekly = $repository->getPlanedWeeklyExpenses();
+        $daily = $repository->getPlanedDailyExpenses();
+
+        // Calculate the total planned entry.
+        // Moltiplique the weekly and daily planned expenses by the number of weeks and days in the month.
+        $totalMonthly = $monthly['total'];
+
+        //check if the month has 4 or 5 weeks
+        $weeks = $this->weeksInMonth(date('m'), date('Y'));
+        $totalWeekly = $weekly['total'] * $weeks;
+
+        //check if the month has 30 or 31 days
+        $days = $this->daysInMonth(date('m'), date('Y'));
+        $totalDaily = $daily['total'] * $days;
+
+        $total = new BcMathNumber($totalMonthly);
+        $total = $total->add($totalWeekly);
+        $total = $total->add($totalDaily);
+
+        return response([
+            "total" => $total->toFloat(),
         ],200);
 
     }
