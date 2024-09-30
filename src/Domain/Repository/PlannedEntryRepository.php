@@ -58,9 +58,6 @@ class PlannedEntryRepository extends StatsRepository {
             WHERE 
                 e.type in ('$expensesLabel')
                 AND e.deleted_at is null
-<<<<<<< Updated upstream
-                AND e.planned in ('$plannedtypeLabelMonthly', '$plannedtypeLabelDaily', '$plannedtypeLabelWeekly')
-=======
                 AND e.planning = '$plannedtypeLabelWeekly'
                 AND e.end_date_time >= CURDATE()
                 AND e.workspace_id = $wsId;
@@ -93,7 +90,6 @@ class PlannedEntryRepository extends StatsRepository {
                 AND e.deleted_at is null
                 AND e.planning = '$plannedtypeLabelDaily'
                 AND e.end_date_time >= CURDATE()
->>>>>>> Stashed changes
                 AND e.workspace_id = $wsId;
         ";
 
