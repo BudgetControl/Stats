@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a7818935f7aa570e43ffd7e7e19082d1",
+    "content-hash": "284ee8d97e1da61256e8be099f50e11a",
     "packages": [
         {
             "name": "brick/math",
@@ -113,16 +113,16 @@
         },
         {
             "name": "budgetcontrol/library",
-            "version": "v1.1.0",
+            "version": "v1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/BudgetControl/Library.git",
-                "reference": "61a00116bbeec8dff9cb9005d1c39ff3b60b3236"
+                "reference": "591c808cbd2a6b2e852879fcf60aca279dda1a51"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/BudgetControl/Library/zipball/61a00116bbeec8dff9cb9005d1c39ff3b60b3236",
-                "reference": "61a00116bbeec8dff9cb9005d1c39ff3b60b3236",
+                "url": "https://api.github.com/repos/BudgetControl/Library/zipball/591c808cbd2a6b2e852879fcf60aca279dda1a51",
+                "reference": "591c808cbd2a6b2e852879fcf60aca279dda1a51",
                 "shasum": ""
             },
             "require": {
@@ -144,9 +144,9 @@
                 }
             ],
             "support": {
-                "source": "https://github.com/BudgetControl/Library/tree/v1.1.0"
+                "source": "https://github.com/BudgetControl/Library/tree/v1.3"
             },
-            "time": "2024-09-16T08:45:49+00:00"
+            "time": "2024-10-18T13:20:42+00:00"
         },
         {
             "name": "cakephp/chronos",
@@ -6619,12 +6619,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.1"
     },
-    "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
 }

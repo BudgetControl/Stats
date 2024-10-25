@@ -108,7 +108,7 @@ class StatsRepository
     {
         $wsId = $this->wsId;
 
-        $wallets = Wallet::where('workspace_id', $wsId)
+        $wallets = Wallet::with('currency')->where('workspace_id', $wsId)
             ->where('deleted_at', null)
             ->get();
         
