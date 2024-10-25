@@ -3,22 +3,14 @@ declare(strict_types=1);
 
 namespace Budgetcontrol\Stats\Domain\Model;
 
+use Budgetcontrol\Library\Model\Currency;
 use Budgetcontrol\Library\Model\Wallet as Model;
-use BudgetcontrolLibs\Crypt\Traits\Crypt;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 final class Wallet extends Model {
 
-    use Crypt;
-
-    public function name(): Attribute
+    public function currency()
     {
-        $this->key = env('APP_KEY');
-        
-        return Attribute::make(
-            get: fn (string $value) => $this->decrypt($value),
-            set: fn (string $value) => $this->encrypt($value),
-        );
+       return $this->belongsTo(Currency::class, 'currency', 'id');
     }
     
 }
