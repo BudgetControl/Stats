@@ -35,7 +35,7 @@ class BarChartController extends ChartController
             foreach(SubCategory::all() as $category) {
                 $categoryStats = $expensesRepository->expensesByCategory([$category->id]);
 
-                if(is_null($categoryStats)) {
+                if(is_null($categoryStats->total)) {
                     $categoryStats = (object) ['total' => 0, 'category_slug' => $category->slug, 'category_id' => $category->id];
                 }
 
