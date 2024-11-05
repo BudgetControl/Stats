@@ -9,6 +9,7 @@ use Budgetcontrol\Stats\Domain\Entity\TableChart\TableChart;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Illuminate\Support\Carbon;
+use Budgetcontrol\Library\Model\SubCategory;
 
 class TableChartController extends ChartController
 {
@@ -31,17 +32,16 @@ class TableChartController extends ChartController
             $expensesRepository = new ExpensesRepository($arg['wsid'], $startDate, $endDate);
             $expensesPrevRepository = new ExpensesRepository($arg['wsid'], $startDatePrev, $endDatePrev);
 
-            foreach ($expensesRepository->expensesByCategory() as $category) {
-                if ($categories && !in_array($category->category_name, $categories)) {
-                    continue;
-                }
+            foreach (SubCategory::all() as $category) {
+               
+                $categoryStats = $expensesRepository->expensesByCategory([$category->id]);
+                $expensesVluePrev = $expensesPrevRepository->expensesByCategory([$category->id]);
 
-                $expensesVluePrev = $expensesPrevRepository->expensesByCategory([$category->category_id])[0];
                 $tableChart->addRows(
                     new TableRowChart(
-                        $category->total,
+                        $categoryStats->total,
                         $expensesVluePrev->total ?? 0,
-                        $category->category_slug,
+                        $categoryStats->category_slug,
                         'expenses',
                     )
                 );

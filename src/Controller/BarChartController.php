@@ -9,6 +9,7 @@ use Budgetcontrol\Stats\Domain\Entity\BarChart\BarChart;
 use Budgetcontrol\Stats\Domain\Entity\BarChart\BarChartBar;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Illuminate\Support\Carbon;
+use Budgetcontrol\Library\Model\SubCategory;
 
 class BarChartController extends ChartController
 {
@@ -31,16 +32,14 @@ class BarChartController extends ChartController
                 $endDate
             );
 
-            foreach($expensesRepository->expensesByCategory() as $category) {
-                if ($categories && !in_array($category->category_slug, $categories)) {
-                    continue;
-                }
+            foreach(SubCategory::all() as $category) {
+                $categoryStats = $expensesRepository->expensesByCategory([$category->id]);
 
                 $barChart->addBar(
                     new BarChartBar(
-                        $category->total,
-                        $category->category_slug,
-                        $category->category_id
+                        $categoryStats->total,
+                        $categoryStats->category_slug,
+                        $categoryStats->category_id
                     )
                 );
 
