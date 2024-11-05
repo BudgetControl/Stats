@@ -25,13 +25,13 @@ class BarChartController extends ChartController
             $startDate = Carbon::rawParse($value['start']);
             $endDate = Carbon::rawParse($value['end']);
 
-            $incomingRepository = new ExpensesRepository(
+            $expensesRepository = new ExpensesRepository(
                 $arg['wsid'],
                 $startDate,
                 $endDate
             );
 
-            foreach($incomingRepository->expensesByCategory() as $category) {
+            foreach($expensesRepository->expensesByCategory() as $category) {
                 if ($categories && !in_array($category->category_slug, $categories)) {
                     continue;
                 }
