@@ -35,6 +35,10 @@ class BarChartController extends ChartController
             foreach(SubCategory::all() as $category) {
                 $categoryStats = $expensesRepository->expensesByCategory([$category->id]);
 
+                if(is_null($categoryStats)) {
+                    $categoryStats = (object) ['total' => 0, 'category_slug' => $category->slug, 'category_id' => $category->id];
+                }
+
                 $barChart->addBar(
                     new BarChartBar(
                         $categoryStats->total,

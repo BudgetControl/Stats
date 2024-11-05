@@ -37,6 +37,14 @@ class TableChartController extends ChartController
                 $categoryStats = $expensesRepository->expensesByCategory([$category->id]);
                 $expensesVluePrev = $expensesPrevRepository->expensesByCategory([$category->id]);
 
+                if(is_null($categoryStats)) {
+                    $categoryStats = (object) ['total' => 0, 'category_slug' => $category->slug];
+                }
+
+                if(is_null($expensesVluePrev)) {
+                    $expensesVluePrev = (object) ['total' => 0];
+                }
+
                 $tableChart->addRows(
                     new TableRowChart(
                         $categoryStats->total,
