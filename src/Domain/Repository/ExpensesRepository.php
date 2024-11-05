@@ -1,5 +1,4 @@
 <?php
-
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use DateTime;
@@ -7,11 +6,9 @@ use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
-class ExpensesRepository extends StatsRepository
-{
-
-    public function statsExpenses()
-    {
+class ExpensesRepository extends StatsRepository{
+    
+    public function statsExpenses() {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
@@ -44,32 +41,33 @@ class ExpensesRepository extends StatsRepository
         $endDate = $this->endDate->toAtomString();
 
         $addConditions = '';
-        if (!empty($categories)) {
+        if(!empty($categories)) {
             $addConditions .= "AND c.id IN ('" . implode("','", $categories) . "')";
         }
 
         $query = "
-        SELECT 
+            SELECT 
             c.id AS category_id,
             c.name AS category_name,
             c.slug AS category_slug,
             COALESCE(SUM(e.amount), 0) AS total
-        FROM 
-            sub_categories AS c
-        LEFT JOIN 
-            entries AS e ON e.category_id = c.id
-            AND e.type = 'expenses'
-            AND e.amount < 0
-            AND e.exclude_from_stats = 0
-            AND e.deleted_at IS NULL
-            AND e.confirmed = 1
-            AND e.planned = 0
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND e.workspace_id = $wsId
-            $addConditions
-        GROUP BY
-            c.id, c.name, c.slug;
+            FROM 
+                entries AS e
+            JOIN 
+                sub_categories AS c ON e.category_id = c.id
+            WHERE 
+                e.type IN ('expenses')
+                AND e.amount < 0
+                AND e.exclude_from_stats = 0
+                AND e.deleted_at IS NULL
+                AND e.confirmed = 1
+                AND e.planned = 0
+                AND e.date_time >= '$startDate'
+                AND e.date_time < '$endDate'
+                AND e.workspace_id = $wsId
+                $addConditions
+            GROUP BY
+                c.id, c.name, c.slug;
         ";
 
         $result = DB::select($query);
@@ -84,7 +82,7 @@ class ExpensesRepository extends StatsRepository
         $endDate = $this->endDate->toAtomString();
 
         $addConditions = '';
-        if (!empty($labels)) {
+        if(!empty($labels)) {
             $addConditions .= "AND l.id IN ('" . implode("','", $labels) . "')";
         }
 
@@ -117,8 +115,8 @@ class ExpensesRepository extends StatsRepository
         $results = DB::select($query);
 
         //only labels
-        foreach ($results as $key => $value) {
-            if ($value->label_name == null) {
+        foreach($results as $key => $value) {
+            if($value->label_name == null) {
                 unset($results[$key]);
             }
         }
