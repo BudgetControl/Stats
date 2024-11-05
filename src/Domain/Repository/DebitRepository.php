@@ -26,7 +26,7 @@ class DebitRepository extends StatsRepository{
             AND e.exclude_from_stats = 0
             AND e.deleted_at is null
             AND e.confirmed = 1
-            AND e.amount < 0 //get only the expenses
+            AND e.amount < 0
             AND e.planned = 0
             AND e.date_time >= '$startDate'
             AND e.date_time < '$endDate'
