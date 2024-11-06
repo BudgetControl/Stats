@@ -4,10 +4,11 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 use DateTime;
 use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
+use Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
-class ExpensesRepository extends StatsRepository{
-    
+class ExpensesRepository extends StatsRepository {
+
     public function statsExpenses() {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
@@ -34,45 +35,56 @@ class ExpensesRepository extends StatsRepository{
         ];
     }
 
-    public function expensesByCategory(array $categories = [])
+    /**
+     * Retrieves expenses categorized by all categories.
+     *
+     * @return array of ExpensesCategory Returns an instance of ExpensesCategory containing the categorized expenses.
+     */
+    public function expensesByCategories(): array
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $addConditions = '';
-        if(!empty($categories)) {
-            $addConditions .= "AND c.id IN ('" . implode("','", $categories) . "')";
-        }
-
         $query = "
-            SELECT 
+        SELECT 
             c.id AS category_id,
             c.name AS category_name,
             c.slug AS category_slug,
             COALESCE(SUM(e.amount), 0) AS total
-            FROM 
-                entries AS e
-            JOIN 
-                sub_categories AS c ON e.category_id = c.id
-            WHERE 
-                e.type IN ('expenses')
-                AND e.amount < 0
-                AND e.exclude_from_stats = 0
-                AND e.deleted_at IS NULL
-                AND e.confirmed = 1
-                AND e.planned = 0
-                AND e.date_time >= '$startDate'
-                AND e.date_time < '$endDate'
-                AND e.workspace_id = $wsId
-                $addConditions
-            GROUP BY
-                c.id, c.name, c.slug;
+        FROM 
+            sub_categories AS c
+        LEFT JOIN 
+            entries AS e ON e.category_id = c.id
+            AND e.type = 'expenses'
+            AND e.amount < 0
+            AND e.exclude_from_stats = 0
+            AND e.deleted_at IS NULL
+            AND e.confirmed = 1
+            AND e.planned = 0
+            AND e.date_time >= '$startDate'
+            AND e.date_time < '$endDate'
+            AND e.workspace_id = $wsId
+        GROUP BY
+            c.id, c.name, c.slug;
         ";
 
         $result = DB::select($query);
 
-        return $result;
+        if(empty($result)) {
+            throw new NotFoundResourceException('Something went wrong');
+        }
+
+        foreach($result as $value) {
+            $data[$value->category_slug] = new ExpensesCategory(
+                $value->total,
+                $value->category_slug,
+                $value->category_id,
+                $value->category_name
+            );
+        }
+
+        return $data;
     }
 
     public function expensesByLabels(array $labels = [])

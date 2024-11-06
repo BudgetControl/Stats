@@ -2,6 +2,7 @@
 
 namespace Budgetcontrol\Stats\Controller;
 
+use Budgetcontrol\Library\Model\SubCategory;
 use DateTime;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -31,17 +32,17 @@ class TableChartController extends ChartController
             $expensesRepository = new ExpensesRepository($arg['wsid'], $startDate, $endDate);
             $expensesPrevRepository = new ExpensesRepository($arg['wsid'], $startDatePrev, $endDatePrev);
 
-            foreach ($expensesRepository->expensesByCategory() as $category) {
-                if ($categories && !in_array($category->category_name, $categories)) {
-                    continue;
-                }
+            $expensesValue = $expensesRepository->expensesByCategories();
+            $expensesVluePrev = $expensesPrevRepository->expensesByCategories();
 
-                $expensesVluePrev = $expensesPrevRepository->expensesByCategory([$category->category_id])[0];
+            /** @var \Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory $expenses */
+            foreach ($expensesValue as $expenses) {
+
                 $tableChart->addRows(
                     new TableRowChart(
-                        $category->total,
-                        $expensesVluePrev->total ?? 0,
-                        $category->category_slug,
+                        $expenses->total,
+                        $expensesVluePrev[$expenses->categorySlug]->total ?? 0,
+                        $expenses->categorySlug,
                         'expenses',
                     )
                 );

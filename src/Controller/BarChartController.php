@@ -31,16 +31,13 @@ class BarChartController extends ChartController
                 $endDate
             );
 
-            foreach($incomingRepository->expensesByCategory() as $category) {
-                if ($categories && !in_array($category->category_slug, $categories)) {
-                    continue;
-                }
-
+            /** @var \Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory $expenses */
+            foreach($incomingRepository->expensesByCategories() as $expenses) {
                 $barChart->addBar(
                     new BarChartBar(
-                        $category->total,
-                        $category->category_slug,
-                        $category->category_id
+                        $expenses->total,
+                        $expenses->categorySlug,
+                        $expenses->categoryId
                     )
                 );
 
