@@ -36,6 +36,49 @@ class ExpensesRepository extends StatsRepository {
     }
 
     /**
+     * Retrieves the expenses associated with a specific category.
+     *
+     * @param int $categoryId The ID of the category for which to retrieve expenses.
+     * @return ExpensesCategory The expenses related to the specified category.
+     */
+    public function expensesByCategory(int $categoryId): ExpensesCategory
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $query = "
+            SELECT 
+                c.id AS category_id,
+                c.name AS category_name,
+                c.slug AS category_slug,
+                COALESCE(SUM(e.amount), 0) AS total
+            FROM 
+                entries AS e
+            WHERE 
+                e.category_id = $categoryId
+                AND e.type = 'expenses'
+                AND e.amount < 0
+                AND e.exclude_from_stats = 0
+                AND e.deleted_at IS NULL
+                AND e.confirmed = 1
+                AND e.planned = 0
+                AND e.date_time >= '$startDate'
+                AND e.date_time < '$endDate'
+                AND e.workspace_id = $wsId;
+        ";
+
+        $result = DB::select($query);
+
+        return new ExpensesCategory(
+            $result[0]->total,
+            $result[0]->category_slug,
+            $categoryId,
+            $result[0]->category_name
+        );
+    }
+
+    /**
      * Retrieves expenses categorized by all categories.
      *
      * @return array of ExpensesCategory Returns an instance of ExpensesCategory containing the categorized expenses.
