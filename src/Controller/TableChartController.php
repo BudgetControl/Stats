@@ -2,15 +2,12 @@
 
 namespace Budgetcontrol\Stats\Controller;
 
-use Budgetcontrol\Library\Model\SubCategory;
-use DateTime;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableChart;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Illuminate\Support\Carbon;
-use Budgetcontrol\Library\Model\SubCategory;
 
 class TableChartController extends ChartController
 {
