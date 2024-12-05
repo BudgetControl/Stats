@@ -36,13 +36,12 @@ class BarChartController extends ChartController
 
             /** @var \Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory $expenses */
             foreach($expensesRepository->expensesByCategories() as $expenses) {
-                $subCategory = SubCategory::where('id', $expenses->categoryId)->first();
-                $category = Category::where('id', $subCategory->category_id)->first();
+                $subCategory = SubCategory::with('cateogry')->where('id', $expenses->categoryId)->first();
 
                 $barChart->addBar(
                     new BarChartBar(
                         $expenses->total,
-                        $category,
+                        $subCategory,
                     )
                 );
 
