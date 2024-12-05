@@ -1,20 +1,20 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Entity\BarChart;
 
+use Budgetcontrol\Library\Model\Category;
+use Illuminate\Database\Eloquent\Model;
 
 final class BarChartBar
 {
     private float $value;
-    private string $label;
     private string $color;
-    private float $labelId;
+    private Model $data;
 
-    public function __construct(float $value, string $label, float $labelId)
+    public function __construct(float $value, Model $data)
     {
         $this->value = $value;
-        $this->label = $label;
         $this->color = $this->color();
-        $this->labelId = $labelId;
+        $this->data = $data;
     }
 
     private function color()
@@ -35,14 +35,6 @@ final class BarChartBar
     }
 
     /**
-     * Get the value of label
-     */ 
-    public function getLabel()
-    {
-        return $this->label;
-    }
-
-    /**
      * Get the value of color
      */ 
     public function getColor()
@@ -51,12 +43,12 @@ final class BarChartBar
     }
 
     /**
-     * Get the value of labelId
+     * Get the value of data
      *
-     * @return int
+     * @return Model
      */
-    public function getLabelId(): int
+    public function getData(): Model
     {
-        return $this->labelId;
+        return $this->data;
     }
 }
