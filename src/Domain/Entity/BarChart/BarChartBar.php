@@ -47,8 +47,8 @@ final class BarChartBar
      *
      * @return Model
      */
-    public function getData(): Model
+    public function getData(): array
     {
-        return $this->data;
+        return $this->data->toArray();
     }
 }
