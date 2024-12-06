@@ -36,7 +36,7 @@ class BarChartController extends ChartController
 
             /** @var \Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory $expenses */
             foreach($expensesRepository->expensesByCategories() as $expenses) {
-                $subCategory = SubCategory::with('cateogry')->where('id', $expenses->categoryId)->first();
+                $subCategory = SubCategory::with('category')->where('id', $expenses->categoryId)->first();
 
                 $barChart->addBar(
                     new BarChartBar(
@@ -61,8 +61,8 @@ class BarChartController extends ChartController
 
         foreach($params['date_time'] as $_ => $value) {
 
-            $startDate = new DateTime($value['start']);
-            $endDate = new DateTime($value['end']);
+            $startDate = Carbon::rawParse($value['start']);
+            $endDate = Carbon::rawParse($value['end']);
 
             $incomingRepository = new ExpensesRepository(
                 $arg['wsid'],

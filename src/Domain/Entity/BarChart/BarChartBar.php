@@ -1,11 +1,13 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Entity\BarChart;
 
-use Budgetcontrol\Library\Model\Category;
 use Illuminate\Database\Eloquent\Model;
+use Budgetcontrol\Stats\Trait\Serializer;
 
 final class BarChartBar
 {
+    use Serializer;
+
     private float $value;
     private string $color;
     private Model $data;

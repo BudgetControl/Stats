@@ -31,7 +31,7 @@ class StatsController extends Controller {
 
         return response([
             "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $currentAmount, $previusAMount)),
-            "total" => $currentAmount,
+            "total" => (float) $currentAmount,
             "total_passed" => $previusAMount,
         ],200);
     }
@@ -49,7 +49,7 @@ class StatsController extends Controller {
 
         return response([
             "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $currentAmount, $previusAMount)),
-            "total" => $currentAmount,
+            "total" => (float) $currentAmount,
             "total_passed" => $previusAMount,
         ],200);
 
@@ -117,7 +117,7 @@ class StatsController extends Controller {
             $total = BigNumber::sum($total, $value->installement_value);
         }
         /** @var BigInteger $total */
-        return response(['total' => (float) $total->__toString()],200);
+        return response(['total' => $total->toFloat()],200);
     }
 
     public function entries(Request $request, Response $response, $arg) {
@@ -165,7 +165,7 @@ class StatsController extends Controller {
         $currentAmount = round($repository->statsExpenses()['total'] / 12);
 
         return response([
-            "total" => $currentAmount,
+            "total" => (float) $currentAmount,
         ],200);
 
     }
@@ -179,7 +179,7 @@ class StatsController extends Controller {
         $currentAmount = round($repository->statsIncoming()['total'] / 12);
 
         return response([
-            "total" => $currentAmount,
+            "total" => (float) $currentAmount,
         ],200);
 
     }
@@ -199,7 +199,7 @@ class StatsController extends Controller {
         $currentAmount = round($total / 12);
 
         return response([
-            "total" => $currentAmount,
+            "total" => (float) $currentAmount,
         ],200);
 
     }
@@ -235,7 +235,7 @@ class StatsController extends Controller {
         
 
         return response([
-            "total" => $total,
+            "total" => (float) $total,
         ],200);
 
     }
@@ -261,7 +261,7 @@ class StatsController extends Controller {
         $result = $repository->plannedExpenses();
 
         return response([
-            "total" => $result->total
+            "total" => (float) $result->total
         ],200);
 
     }

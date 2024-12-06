@@ -95,7 +95,7 @@ class StatsRepository
         $result = DB::select($query);
 
         return [
-            'total' => $result[0]->total_balance
+            'total' => (float) $result[0]->total_balance
         ];
     }
 
