@@ -2,6 +2,8 @@
 
 namespace Budgetcontrol\Stats\Controller;
 
+use Budgetcontrol\Library\Model\Category;
+use Budgetcontrol\Library\Model\Label;
 use DateTime;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -34,11 +36,12 @@ class BarChartController extends ChartController
 
             /** @var \Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory $expenses */
             foreach($expensesRepository->expensesByCategories() as $expenses) {
+                $subCategory = SubCategory::with('cateogry')->where('id', $expenses->categoryId)->first();
+
                 $barChart->addBar(
                     new BarChartBar(
                         $expenses->total,
-                        $expenses->categorySlug,
-                        $expenses->categoryId
+                        $subCategory,
                     )
                 );
 
@@ -72,11 +75,12 @@ class BarChartController extends ChartController
                     continue;
                 }
 
+                $label = Label::where('id', $label->id)->first();
+
                 $barChart->addBar(
                     new BarChartBar(
                         $label->total,
-                        $label->label_name,
-                        $label->label_id
+                        $label,
                     )
                 );
 
