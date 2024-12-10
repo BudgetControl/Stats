@@ -23,7 +23,7 @@ class DebitRepository extends StatsRepository{
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
             WHERE e.type in ('debit')
-            AND e.exclude_from_stats = 0
+            AND e.exclude_from_stats = false
             AND e.deleted_at is null
             AND e.confirmed = true
             AND e.amount < 0

@@ -53,10 +53,10 @@ class StatsRepository
             FROM entries AS e
             JOIN wallets AS a ON e.account_id = a.id
             WHERE e.type IN ('expenses', 'incoming')
-              AND e.exclude_from_stats = 0
-              AND a.exclude_from_stats = 0
-              AND e.confirmed = 1
-              AND e.planned = 0
+              AND e.exclude_from_stats = false
+              AND a.exclude_from_stats = false
+              AND e.confirmed = true
+              AND e.planned = false
               AND e.date_time >= ?
               AND e.date_time < ?
               AND a.workspace_id = ?
@@ -89,7 +89,7 @@ class StatsRepository
             FROM wallets
             WHERE workspace_id = ?
               AND deleted_at IS NULL
-              AND exclude_from_stats = 0;
+              AND exclude_from_stats = false;
         ";
 
         $result = DB::select($query, [$wsId]);
@@ -130,7 +130,7 @@ class StatsRepository
             FROM wallets
             WHERE workspace_id = ?
               AND deleted_at IS NULL
-              AND exclude_from_stats = 0;
+              AND exclude_from_stats = false;
         ";
 
         $result = DB::select($query, [$wsId]);
@@ -156,7 +156,7 @@ class StatsRepository
         SELECT 
         COALESCE(SUM(CASE WHEN a.installement = 1  and a.balance < 0 THEN a.installement_value END), 0) AS installement_balance,
         COALESCE(SUM(CASE WHEN a.installement = 0 THEN a.balance END), 0) AS balance_without_installement,
-        COALESCE(SUM(CASE WHEN e.planned = 1 THEN e.amount END), 0) AS planned_amount_total
+        COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
         FROM 
             wallets AS a
         LEFT JOIN (
@@ -167,7 +167,7 @@ class StatsRepository
             FROM 
                 entries
             WHERE 
-                planned = 1
+                planned = true
                 AND MONTH(date_time) = MONTH(CURRENT_DATE())
                 AND YEAR(date_time) = YEAR(CURRENT_DATE())
                 AND confirmed = true
@@ -216,7 +216,7 @@ class StatsRepository
 
         $query = "
             SELECT 
-                COALESCE(SUM(CASE WHEN e.planned = 1 THEN e.amount END), 0) AS planned_amount_total
+                COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
             FROM 
                 entries AS e
             WHERE 
@@ -342,7 +342,7 @@ class StatsRepository
      * @param int $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
      * @return stdClass
      */
-    public function statsByCategories(string $categorySlug, int $isPlanned = 0): stdClass
+    public function statsByCategories(string $categorySlug, int $isplanned = false): stdClass
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
@@ -401,7 +401,7 @@ class StatsRepository
                 wallets AS a
             WHERE 
                 a.deleted_at IS NULL
-                AND a.exclude_from_stats = 0
+                AND a.exclude_from_stats = false
                 AND ( 
                     a.type = '".$walletsType[0]."'
                     OR a.type = '".$walletsType[1]."' 
@@ -425,16 +425,16 @@ class StatsRepository
 
         $query = "
             SELECT 
-                COALESCE(SUM(CASE WHEN e.planned = 1 THEN e.amount END), 0) AS total
+                COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS total
             FROM 
                 entries AS e
             WHERE 
-                e.planned = 1
+                e.planned = true
                 AND MONTH(e.date_time) = MONTH(CURRENT_DATE())
                 AND YEAR(e.date_time) = YEAR(CURRENT_DATE())
-                AND e.confirmed = 1
+                AND e.confirmed = true
                 AND e.deleted_at IS NULL
-                AND e.exclude_from_stats = 0
+                AND e.exclude_from_stats = false
                 AND e.type IN ('expenses')
                 AND e.workspace_id = $wsId;
         ";
