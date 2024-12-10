@@ -347,6 +347,7 @@ class StatsRepository
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
+        $isplanned = $isplanned ? true : false;
 
         $query = "
             SELECT 
