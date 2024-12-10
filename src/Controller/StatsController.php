@@ -194,7 +194,7 @@ class StatsController extends Controller {
             $startDate,
             $endDate
         );
-        $result = $repository->statsByCategories('savings', 1);
+        $result = $repository->statsByCategories('savings', true);
         $total = $result->total;
         $currentAmount = round($total / 12);
 

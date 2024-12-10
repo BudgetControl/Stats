@@ -342,7 +342,7 @@ class StatsRepository
      * @param int $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
      * @return stdClass
      */
-    public function statsByCategories(string $categorySlug, int $isplanned = false): stdClass
+    public function statsByCategories(string $categorySlug, bool $isplanned = false): stdClass
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
@@ -364,7 +364,7 @@ class StatsRepository
                 AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
                 AND e.confirmed = true
-                AND e.planned in (0,$isPlanned)
+                AND e.planned in (false,$isplanned)
                 AND e.date_time >= '$startDate'
                 AND e.date_time < '$endDate'
                 AND e.workspace_id = $wsId
