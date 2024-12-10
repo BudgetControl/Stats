@@ -339,7 +339,7 @@ class StatsRepository
      * Retrieves statistics by category slug.
      *
      * @param string $categorySlug The slug of the category.
-     * @param int $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
+     * @param bool $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
      * @return stdClass
      */
     public function statsByCategories(string $categorySlug, bool $isplanned = false): stdClass
@@ -347,33 +347,36 @@ class StatsRepository
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
-        $isplanned = $isplanned ? true : false;
+        $planned = "AND e.planned = false";
+        if($isPlanned == true) {
+                $planned = "AND e.planned in (false,true)";
+        }
 
         $query = "
-            SELECT 
+            SELECT
                 c.uuid AS category_uuid,
                 cc.type AS category_type,
                 c.slug AS category_slug,
                 COALESCE(SUM(e.amount), 0) AS total,
                 c.id AS category_id
-            FROM 
+            FROM
                 sub_categories AS c
-            JOIN 
+            JOIN
                 categories AS cc ON c.category_id = cc.id
-            LEFT JOIN 
+            LEFT JOIN
                 entries AS e ON e.category_id = c.id
                 AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
                 AND e.confirmed = true
-                AND e.planned in (false,$isplanned)
+                $planned
                 AND e.date_time >= '$startDate'
                 AND e.date_time < '$endDate'
                 AND e.workspace_id = $wsId
                 AND e.type IN ('expenses', 'incoming')
-            WHERE 
+            WHERE
                 c.slug = '$categorySlug'
-            GROUP BY 
-                cc.type, c.name, c.id
+            GROUP BY
+                cc.type, c.id, c.uuid, c.slug
             ORDER BY
                 cc.type desc;";
 
