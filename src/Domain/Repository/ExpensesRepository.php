@@ -1,4 +1,5 @@
 <?php
+
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use DateTime;
@@ -7,9 +8,11 @@ use Budgetcontrol\Stats\Domain\Model\Workspace;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
-class ExpensesRepository extends StatsRepository {
+class ExpensesRepository extends StatsRepository
+{
 
-    public function statsExpenses() {
+    public function statsExpenses()
+    {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
@@ -17,15 +20,16 @@ class ExpensesRepository extends StatsRepository {
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
-            WHERE e.type in ('expenses')
+            WHERE e.type IN ('expenses')
             AND e.amount < 0
-            AND e.exclude_from_stats = 0
-            AND e.deleted_at is null
-            AND e.confirmed = 1
-            AND e.planned = 0
+            AND e.exclude_from_stats = false
+            AND e.deleted_at IS NULL
+            AND e.confirmed = true
+            AND e.planned = false
             AND e.date_time >= '$startDate'
             AND e.date_time < '$endDate'
             AND e.workspace_id = $wsId;
+
         ";
 
         $result = DB::select($query);
@@ -49,23 +53,28 @@ class ExpensesRepository extends StatsRepository {
 
         $query = "
             SELECT 
-                c.id AS category_id,
-                c.name AS category_name,
-                c.slug AS category_slug,
-                COALESCE(SUM(e.amount), 0) AS total
-            FROM 
-                entries AS e
-            WHERE 
-                e.category_id = $categoryId
-                AND e.type = 'expenses'
-                AND e.amount < 0
-                AND e.exclude_from_stats = 0
-                AND e.deleted_at IS NULL
-                AND e.confirmed = 1
-                AND e.planned = 0
-                AND e.date_time >= '$startDate'
-                AND e.date_time < '$endDate'
-                AND e.workspace_id = $wsId;
+            c.id AS category_id,
+            c.name AS category_name,
+            c.slug AS category_slug,
+            COALESCE(SUM(e.amount), 0) AS total
+        FROM 
+            entries AS e
+        INNER JOIN 
+            categories AS c ON e.category_id = c.id
+        WHERE 
+            e.category_id = $categoryId
+            AND e.type = 'expenses'
+            AND e.amount < 0
+            AND e.exclude_from_stats = false
+            AND e.deleted_at IS NULL
+            AND e.confirmed = true
+            AND e.planned = false
+            AND e.date_time >= '$startDate'
+            AND e.date_time < '$endDate'
+            AND e.workspace_id = $wsId
+        GROUP BY 
+            c.id, c.name, c.slug;
+
         ";
 
         $result = DB::select($query);
@@ -90,7 +99,7 @@ class ExpensesRepository extends StatsRepository {
         $endDate = $this->endDate->toAtomString();
 
         $query = "
-        SELECT 
+       SELECT 
             c.id AS category_id,
             c.name AS category_name,
             c.slug AS category_slug,
@@ -101,24 +110,25 @@ class ExpensesRepository extends StatsRepository {
             entries AS e ON e.category_id = c.id
             AND e.type = 'expenses'
             AND e.amount < 0
-            AND e.exclude_from_stats = 0
+            AND e.exclude_from_stats = false
             AND e.deleted_at IS NULL
-            AND e.confirmed = 1
-            AND e.planned = 0
+            AND e.confirmed = true
+            AND e.planned = false
             AND e.date_time >= '$startDate'
             AND e.date_time < '$endDate'
             AND e.workspace_id = $wsId
         GROUP BY
             c.id, c.name, c.slug;
+
         ";
 
         $result = DB::select($query);
 
-        if(empty($result)) {
+        if (empty($result)) {
             throw new NotFoundResourceException('Something went wrong');
         }
 
-        foreach($result as $value) {
+        foreach ($result as $value) {
             $data[$value->category_slug] = new ExpensesCategory(
                 $value->total,
                 $value->category_slug,
@@ -137,12 +147,12 @@ class ExpensesRepository extends StatsRepository {
         $endDate = $this->endDate->toAtomString();
 
         $addConditions = '';
-        if(!empty($labels)) {
+        if (!empty($labels)) {
             $addConditions .= "AND l.id IN ('" . implode("','", $labels) . "')";
         }
 
         $query = "
-            SELECT 
+           SELECT 
                 l.id AS label_id,
                 l.name AS label_name,
                 COALESCE(SUM(e.amount), 0) AS total
@@ -155,23 +165,24 @@ class ExpensesRepository extends StatsRepository {
             WHERE 
                 e.type IN ('expenses')
                 AND e.amount < 0
-                AND e.exclude_from_stats = 0
+                AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
-                AND e.confirmed = 1
-                AND e.planned = 0
+                AND e.confirmed = true
+                AND e.planned = false
                 AND e.date_time >= '$startDate'
                 AND e.date_time < '$endDate'
                 AND e.workspace_id = $wsId
                 $addConditions
             GROUP BY 
                 l.id, l.name;
+
         ";
 
         $results = DB::select($query);
 
         //only labels
-        foreach($results as $key => $value) {
-            if($value->label_name == null) {
+        foreach ($results as $key => $value) {
+            if ($value->label_name == null) {
                 unset($results[$key]);
             }
         }

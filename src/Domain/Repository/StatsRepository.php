@@ -47,27 +47,28 @@ class StatsRepository
     public function statsTotal()
     {
         $wsId = $this->wsId;
-        $startDate = $this->startDate->toAtomString();
-        $endDate = $this->endDate->toAtomString();
 
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
             JOIN wallets AS a ON e.account_id = a.id
-            WHERE e.type in ('expenses', 'incoming')
-            AND a.installement = 0
-            AND e.exclude_from_stats = 0
-            AND a.exclude_from_stats = 0
-            AND a.deleted_at is null
-            AND e.deleted_at is null
-            AND e.confirmed = 1
-            AND e.planned = 0
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND a.workspace_id = $wsId;
+            WHERE e.type IN ('expenses', 'incoming')
+              AND e.exclude_from_stats = 0
+              AND a.exclude_from_stats = 0
+              AND e.confirmed = 1
+              AND e.planned = 0
+              AND e.date_time >= ?
+              AND e.date_time < ?
+              AND a.workspace_id = ?
+              AND a.deleted_at IS NULL
+              AND e.deleted_at IS NULL;
         ";
 
-        $result = DB::select($query);
+        $result = DB::select($query, [
+            $this->startDate->toAtomString(),
+            $this->endDate->toAtomString(),
+            $wsId,
+        ]);
 
         return [
             'total' => $result[0]->total
@@ -86,13 +87,12 @@ class StatsRepository
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
             FROM wallets
-            WHERE workspace_id = $wsId
-            AND installement = 0
-            AND deleted_at is null
-            AND exclude_from_stats = 0;
+            WHERE workspace_id = ?
+              AND deleted_at IS NULL
+              AND exclude_from_stats = 0;
         ";
 
-        $result = DB::select($query);
+        $result = DB::select($query, [$wsId]);
 
         return [
             'total' => (float) $result[0]->total_balance
@@ -128,10 +128,12 @@ class StatsRepository
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
             FROM wallets
-            WHERE workspace_id = $wsId AND deleted_at is null AND exclude_from_stats = 0;
+            WHERE workspace_id = ?
+              AND deleted_at IS NULL
+              AND exclude_from_stats = 0;
         ";
 
-        $result = DB::select($query);
+        $result = DB::select($query, [$wsId]);
 
         $totalPlanned = $this->totalPlannedOfCurrentMonth();
 
@@ -168,17 +170,17 @@ class StatsRepository
                 planned = 1
                 AND MONTH(date_time) = MONTH(CURRENT_DATE())
                 AND YEAR(date_time) = YEAR(CURRENT_DATE())
-                AND confirmed = 1
+                AND confirmed = true
                 AND deleted_at IS NULL
-                AND exclude_from_stats = 0
+                AND exclude_from_stats = false
                 AND workspace_id = $wsId
             GROUP BY 
                 account_id
         ) AS e ON a.id = e.account_id
         WHERE 
             a.deleted_at IS NULL
-            AND a.exclude_from_stats = 0
-            AND a.installement = 0
+            AND a.exclude_from_stats = false
+            AND a.installement = false
             AND a.workspace_id = $wsId;
         ";
 
@@ -197,7 +199,7 @@ class StatsRepository
         $wsId = $this->wsId;
 
         $date = Carbon::now()->toAtomString();
-        $query = "select installement_value from wallets where installement = 1 and deleted_at is null and invoice_date >= '$date'  AND MONTH(invoice_date) = MONTH(CURRENT_DATE()) and workspace_id = $wsId and balance < installement_value;";
+        $query = "select installement_value from wallets where installement = true and deleted_at is null and invoice_date >= '$date'  AND MONTH(invoice_date) = MONTH(CURRENT_DATE()) and workspace_id = $wsId and balance < installement_value;";
         $result = DB::select($query);
 
         return $result;
@@ -218,12 +220,12 @@ class StatsRepository
             FROM 
                 entries AS e
             WHERE 
-                e.planned = 1
+                e.planned = true
                 AND MONTH(e.date_time) = MONTH(CURRENT_DATE())
                 AND YEAR(e.date_time) = YEAR(CURRENT_DATE())
-                AND e.confirmed = 1
+                AND e.confirmed = true
                 AND e.deleted_at IS NULL
-                AND e.exclude_from_stats = 0
+                AND e.exclude_from_stats = false
                 AND e.workspace_id = $wsId;
         ";
 
@@ -289,10 +291,10 @@ class StatsRepository
                 categories AS cc ON c.category_id = cc.id
             LEFT JOIN 
                 entries AS e ON e.category_id = c.id
-                AND e.exclude_from_stats = 0
+                AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
-                AND e.confirmed = 1
-                AND e.planned = 0
+                AND e.confirmed = true
+                AND e.planned = false
                 AND e.date_time >= '$startDate'
                 AND e.date_time < '$endDate'
                 AND e.workspace_id = $wsId
@@ -359,9 +361,9 @@ class StatsRepository
                 categories AS cc ON c.category_id = cc.id
             LEFT JOIN 
                 entries AS e ON e.category_id = c.id
-                AND e.exclude_from_stats = 0
+                AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
-                AND e.confirmed = 1
+                AND e.confirmed = true
                 AND e.planned in (0,$isPlanned)
                 AND e.date_time >= '$startDate'
                 AND e.date_time < '$endDate'

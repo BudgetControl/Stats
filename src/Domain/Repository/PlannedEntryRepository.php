@@ -6,7 +6,6 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 use Budgetcontrol\Library\Definition\Period;
 use Budgetcontrol\Library\Entity\Entry;
 use Illuminate\Database\Capsule\Manager as DB;
-use stdClass;
 
 class PlannedEntryRepository extends StatsRepository {
     
@@ -26,10 +25,10 @@ class PlannedEntryRepository extends StatsRepository {
             FROM 
                 planned_entries AS e
             WHERE 
-                e.type in ('$expensesLabel')
-                AND e.deleted_at is null
+                e.type IN ('$expensesLabel')
+                AND e.deleted_at IS NULL
                 AND e.planning = '$plannedtypeLabelMonthly'
-                AND e.end_date_time >= CURDATE()
+                AND e.end_date_time >= CURRENT_DATE
                 AND e.workspace_id = $wsId;
         ";
 
@@ -39,12 +38,12 @@ class PlannedEntryRepository extends StatsRepository {
             'total' => $result[0]->total
         ];
     }
+
     /**
      * Retrieves an array of planned weekly expenses.
      *
      * @return array An array containing the planned weekly expenses.
      */
-
     public function getPlanedWeeklyExpenses(): array {
         $wsId = $this->wsId;
         $expensesLabel = Entry::expenses->value;
@@ -56,10 +55,10 @@ class PlannedEntryRepository extends StatsRepository {
             FROM 
                 planned_entries AS e
             WHERE 
-                e.type in ('$expensesLabel')
-                AND e.deleted_at is null
+                e.type IN ('$expensesLabel')
+                AND e.deleted_at IS NULL
                 AND e.planning = '$plannedtypeLabelWeekly'
-                AND e.end_date_time >= CURDATE()
+                AND e.end_date_time >= CURRENT_DATE
                 AND e.workspace_id = $wsId;
         ";
 
@@ -86,10 +85,10 @@ class PlannedEntryRepository extends StatsRepository {
             FROM 
                 planned_entries AS e
             WHERE 
-                e.type in ('$expensesLabel')
-                AND e.deleted_at is null
+                e.type IN ('$expensesLabel')
+                AND e.deleted_at IS NULL
                 AND e.planning = '$plannedtypeLabelDaily'
-                AND e.end_date_time >= CURDATE()
+                AND e.end_date_time >= CURRENT_DATE
                 AND e.workspace_id = $wsId;
         ";
 

@@ -25,9 +25,9 @@ class DebitRepository extends StatsRepository{
             WHERE e.type in ('debit')
             AND e.exclude_from_stats = 0
             AND e.deleted_at is null
-            AND e.confirmed = 1
+            AND e.confirmed = true
             AND e.amount < 0
-            AND e.planned = 0
+            AND e.planned = false
             AND e.date_time >= '$startDate'
             AND e.date_time < '$endDate'
             AND e.workspace_id = $wsId;
@@ -52,8 +52,8 @@ class DebitRepository extends StatsRepository{
             SELECT COALESCE(SUM(w.balance), 0) AS total
             FROM wallets AS w
             WHERE w.type in ('".Wallet::creditCardRevolving->value."')
-            AND w.exclude_from_stats = 0
-            AND w.installement = 1
+            AND w.exclude_from_stats = false
+            AND w.installement = true
             AND w.deleted_at is null
             AND w.workspace_id = $wsId;
         ";
