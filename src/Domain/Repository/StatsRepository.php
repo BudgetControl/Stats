@@ -216,18 +216,17 @@ class StatsRepository
 
         $query = "
             SELECT 
-                COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
+            COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
             FROM 
                 entries AS e
             WHERE 
                 e.planned = true
-                AND MONTH(e.date_time) = MONTH(CURRENT_DATE())
-                AND YEAR(e.date_time) = YEAR(CURRENT_DATE())
+                AND EXTRACT(MONTH FROM e.date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
+                AND EXTRACT(YEAR FROM e.date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
                 AND e.confirmed = true
                 AND e.deleted_at IS NULL
                 AND e.exclude_from_stats = false
-                AND e.workspace_id = $wsId;
-        ";
+                AND e.workspace_id = $wsId;";
 
         $result = DB::select($query);
 
