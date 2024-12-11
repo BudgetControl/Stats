@@ -168,8 +168,8 @@ class StatsRepository
                 entries
             WHERE 
                 planned = true
-                AND MONTH(date_time) = MONTH(CURRENT_DATE())
-                AND YEAR(date_time) = YEAR(CURRENT_DATE())
+                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE) 
+                AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
                 AND confirmed = true
                 AND deleted_at IS NULL
                 AND exclude_from_stats = false
@@ -216,17 +216,18 @@ class StatsRepository
 
         $query = "
             SELECT 
-            COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
+                COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
             FROM 
                 entries AS e
             WHERE 
                 e.planned = true
-                AND EXTRACT(MONTH FROM e.date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
-                AND EXTRACT(YEAR FROM e.date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
+                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE) 
+                AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
                 AND e.confirmed = true
                 AND e.deleted_at IS NULL
                 AND e.exclude_from_stats = false
-                AND e.workspace_id = $wsId;";
+                AND e.workspace_id = $wsId;
+        ";
 
         $result = DB::select($query);
 
@@ -338,7 +339,7 @@ class StatsRepository
      * Retrieves statistics by category slug.
      *
      * @param string $categorySlug The slug of the category.
-     * @param bool $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
+     * @param int $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
      * @return stdClass
      */
     public function statsByCategories(string $categorySlug, bool $isplanned = false): stdClass
@@ -346,36 +347,33 @@ class StatsRepository
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
-        $planned = "AND e.planned = false";
-        if($isPlanned == true) {
-                $planned = "AND e.planned in (false,true)";
-        }
+        $isplanned = $isplanned ? true : false;
 
         $query = "
-            SELECT
+            SELECT 
                 c.uuid AS category_uuid,
                 cc.type AS category_type,
                 c.slug AS category_slug,
                 COALESCE(SUM(e.amount), 0) AS total,
                 c.id AS category_id
-            FROM
+            FROM 
                 sub_categories AS c
-            JOIN
+            JOIN 
                 categories AS cc ON c.category_id = cc.id
-            LEFT JOIN
+            LEFT JOIN 
                 entries AS e ON e.category_id = c.id
                 AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
                 AND e.confirmed = true
-                $planned
+                AND e.planned in (false,$isplanned)
                 AND e.date_time >= '$startDate'
                 AND e.date_time < '$endDate'
                 AND e.workspace_id = $wsId
                 AND e.type IN ('expenses', 'incoming')
-            WHERE
+            WHERE 
                 c.slug = '$categorySlug'
-            GROUP BY
-                cc.type, c.id, c.uuid, c.slug
+            GROUP BY 
+                cc.type, c.name, c.id
             ORDER BY
                 cc.type desc;";
 
@@ -433,8 +431,8 @@ class StatsRepository
                 entries AS e
             WHERE 
                 e.planned = true
-                AND MONTH(e.date_time) = MONTH(CURRENT_DATE())
-                AND YEAR(e.date_time) = YEAR(CURRENT_DATE())
+                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE) 
+                AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
                 AND e.confirmed = true
                 AND e.deleted_at IS NULL
                 AND e.exclude_from_stats = false
