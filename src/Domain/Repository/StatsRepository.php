@@ -5,7 +5,6 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 use Brick\Math\BigNumber;
 use Budgetcontrol\Library\Entity\Wallet as EntityWallet;
 use Budgetcontrol\Stats\Domain\Model\Wallet;
-use DateTime;
 use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
 use Carbon\Carbon;
@@ -175,7 +174,7 @@ class StatsRepository
                 AND exclude_from_stats = false
                 AND workspace_id = $wsId
             GROUP BY 
-                account_id
+                account_id, planned, amount
         ) AS e ON a.id = e.account_id
         WHERE 
             a.deleted_at IS NULL
@@ -301,7 +300,7 @@ class StatsRepository
                 AND e.type IN ('expenses', 'incoming')
                 $addJoins
             GROUP BY 
-                cc.type, c.name, c.id
+                cc.type, c.name, c.id, c.uuid, c.slug
                 ) as query
             WHERE 
                 query.category_type in ('incoming','expenses')
@@ -373,7 +372,7 @@ class StatsRepository
             WHERE 
                 c.slug = '$categorySlug'
             GROUP BY 
-                cc.type, c.name, c.id
+                cc.type, c.name, c.id, c.uuid, c.slug
             ORDER BY
                 cc.type desc;";
 
