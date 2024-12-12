@@ -71,11 +71,15 @@ class BarChartController extends ChartController
             );
 
             foreach($incomingRepository->expensesByLabels() as $label) {
-                if(is_null($label->total)) {
+                if ($labels && !in_array($label->label_name, $labels)) {
                     continue;
                 }
 
                 $label = Label::where('id', $label->id)->first();
+                
+                if(is_null($label->total)) {
+                    continue;
+                }
 
                 $barChart->addBar(
                     new BarChartBar(
