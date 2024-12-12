@@ -356,9 +356,9 @@ class StatsRepository
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
-        $endPlanned = '';
+        $andPlanned = '';
         if($isPlanned) {
-            $endPlanned = "AND e.planned = true";
+            $andPlanned = "AND e.planned = true";
         }
 
         $query = "
