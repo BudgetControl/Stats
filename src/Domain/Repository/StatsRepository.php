@@ -95,7 +95,7 @@ class StatsRepository
         $result = DB::select($query);
 
         return [
-            'total' => $result[0]->total_balance
+            'total' => (float) $result[0]->total_balance
         ];
     }
 
@@ -373,7 +373,8 @@ class StatsRepository
                 AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
                 AND e.confirmed = true
-                AND e.planned in (false,$isPlanned)
+                AND e.planned = false
+                AND e.planned = :isPlanned
                 AND e.date_time >= :startDate
                 AND e.date_time < :endDate
                 AND e.workspace_id = :wsId
@@ -389,7 +390,8 @@ class StatsRepository
             'startDate' => $startDate,
             'endDate' => $endDate,
             'wsId' => $wsId,
-            'categorySlug' => $categorySlug
+            'categorySlug' => $categorySlug,
+            'isPlanned' => $isPlanned
         ]);
 
         return $result[0];
