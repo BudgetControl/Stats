@@ -75,16 +75,12 @@ class BarChartController extends ChartController
                     continue;
                 }
 
-                $label = Label::where('id', $label->id)->first();
-                
-                if(is_null($label->total)) {
-                    continue;
-                }
+                $labelObj = Label::where('id', $label->id)->first();
 
                 $barChart->addBar(
                     new BarChartBar(
                         $label->total,
-                        $label,
+                        $labelObj,
                     )
                 );
 
