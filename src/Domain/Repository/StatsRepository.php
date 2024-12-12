@@ -356,6 +356,10 @@ class StatsRepository
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
+        $endPlanned = '';
+        if($isPlanned) {
+            $endPlanned = "AND e.planned = true";
+        }
 
         $query = "
             SELECT 
@@ -373,8 +377,7 @@ class StatsRepository
                 AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
                 AND e.confirmed = true
-                AND e.planned = false
-                AND e.planned = :isPlanned
+                $andPlanned
                 AND e.date_time >= :startDate
                 AND e.date_time < :endDate
                 AND e.workspace_id = :wsId
@@ -390,8 +393,7 @@ class StatsRepository
             'startDate' => $startDate,
             'endDate' => $endDate,
             'wsId' => $wsId,
-            'categorySlug' => $categorySlug,
-            'isPlanned' => $isPlanned
+            'categorySlug' => $categorySlug
         ]);
 
         return $result[0];
