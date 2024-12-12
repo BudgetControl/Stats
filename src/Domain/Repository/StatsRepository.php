@@ -5,6 +5,7 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 use Brick\Math\BigNumber;
 use Budgetcontrol\Library\Entity\Wallet as EntityWallet;
 use Budgetcontrol\Stats\Domain\Model\Wallet;
+use DateTime;
 use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
 use Carbon\Carbon;
@@ -46,28 +47,27 @@ class StatsRepository
     public function statsTotal()
     {
         $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
 
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
             JOIN wallets AS a ON e.account_id = a.id
-            WHERE e.type IN ('expenses', 'incoming')
-              AND e.exclude_from_stats = false
-              AND a.exclude_from_stats = false
-              AND e.confirmed = true
-              AND e.planned = false
-              AND e.date_time >= ?
-              AND e.date_time < ?
-              AND a.workspace_id = ?
-              AND a.deleted_at IS NULL
-              AND e.deleted_at IS NULL;
+            WHERE e.type in ('expenses', 'incoming')
+            AND e.exclude_from_stats = false
+            AND a.exclude_from_stats = false
+            AND a.installement = false
+            AND a.deleted_at is null
+            AND e.deleted_at is null
+            AND e.confirmed = true
+            AND e.planned = false
+            AND e.date_time >= '$startDate'
+            AND e.date_time < '$endDate'
+            AND a.workspace_id = $wsId;
         ";
 
-        $result = DB::select($query, [
-            $this->startDate->toAtomString(),
-            $this->endDate->toAtomString(),
-            $wsId,
-        ]);
+        $result = DB::select($query);
 
         return [
             'total' => $result[0]->total
@@ -86,15 +86,16 @@ class StatsRepository
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
             FROM wallets
-            WHERE workspace_id = ?
-              AND deleted_at IS NULL
-              AND exclude_from_stats = false;
+            WHERE workspace_id = $wsId
+            AND installement = false
+            AND deleted_at is null
+            AND exclude_from_stats = false;
         ";
 
-        $result = DB::select($query, [$wsId]);
+        $result = DB::select($query);
 
         return [
-            'total' => (float) $result[0]->total_balance
+            'total' => $result[0]->total_balance
         ];
     }
 
@@ -127,12 +128,10 @@ class StatsRepository
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
             FROM wallets
-            WHERE workspace_id = ?
-              AND deleted_at IS NULL
-              AND exclude_from_stats = false;
+            WHERE workspace_id = $wsId AND deleted_at is null AND exclude_from_stats = false;
         ";
 
-        $result = DB::select($query, [$wsId]);
+        $result = DB::select($query);
 
         $totalPlanned = $this->totalPlannedOfCurrentMonth();
 
@@ -153,8 +152,8 @@ class StatsRepository
 
         $query = "
         SELECT 
-        COALESCE(SUM(CASE WHEN a.installement = 1  and a.balance < 0 THEN a.installement_value END), 0) AS installement_balance,
-        COALESCE(SUM(CASE WHEN a.installement = 0 THEN a.balance END), 0) AS balance_without_installement,
+        COALESCE(SUM(CASE WHEN a.installement = true  and a.balance < 0 THEN a.installement_value END), 0) AS installement_balance,
+        COALESCE(SUM(CASE WHEN a.installement = false THEN a.balance END), 0) AS balance_without_installement,
         COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
         FROM 
             wallets AS a
@@ -167,23 +166,24 @@ class StatsRepository
                 entries
             WHERE 
                 planned = true
-                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE) 
+                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
                 AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
+
                 AND confirmed = true
                 AND deleted_at IS NULL
                 AND exclude_from_stats = false
-                AND workspace_id = $wsId
+                AND workspace_id = ?
             GROUP BY 
-                account_id, planned, amount
+                account_id, planned
         ) AS e ON a.id = e.account_id
         WHERE 
             a.deleted_at IS NULL
             AND a.exclude_from_stats = false
             AND a.installement = false
-            AND a.workspace_id = $wsId;
+            AND a.workspace_id = ?;
         ";
 
-        $result = DB::select($query);
+        $result = DB::select($query, [$wsId, $wsId]);
 
         return $result[0];
     }
@@ -198,8 +198,14 @@ class StatsRepository
         $wsId = $this->wsId;
 
         $date = Carbon::now()->toAtomString();
-        $query = "select installement_value from wallets where installement = true and deleted_at is null and invoice_date >= '$date'  AND MONTH(invoice_date) = MONTH(CURRENT_DATE()) and workspace_id = $wsId and balance < installement_value;";
-        $result = DB::select($query);
+        $query = "
+        select installement_value from wallets where installement = true 
+        and deleted_at is null and invoice_date >= ? 
+        AND EXTRACT(MONTH FROM invoice_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+        and workspace_id = ? and balance < installement_value;
+        ";
+
+        $result = DB::select($query, [$date, $wsId]);
 
         return $result;
     }
@@ -220,15 +226,15 @@ class StatsRepository
                 entries AS e
             WHERE 
                 e.planned = true
-                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE) 
-                AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
+                AND EXTRACT(MONTH FROM e.date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
+                AND EXTRACT(YEAR FROM e.date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
                 AND e.confirmed = true
                 AND e.deleted_at IS NULL
                 AND e.exclude_from_stats = false
-                AND e.workspace_id = $wsId;
+                AND e.workspace_id = ?;
         ";
 
-        $result = DB::select($query);
+        $result = DB::select($query, [$wsId]);
 
         return [
             'total' => $result[0]->planned_amount_total
@@ -294,9 +300,9 @@ class StatsRepository
                 AND e.deleted_at IS NULL
                 AND e.confirmed = true
                 AND e.planned = false
-                AND e.date_time >= '$startDate'
-                AND e.date_time < '$endDate'
-                AND e.workspace_id = $wsId
+                AND e.date_time >= :startDate
+                AND e.date_time < :endDate
+                AND e.workspace_id = :wsId
                 AND e.type IN ('expenses', 'incoming')
                 $addJoins
             GROUP BY 
@@ -308,7 +314,11 @@ class StatsRepository
             ORDER BY
                 query.category_type desc;";
 
-        $result = DB::select($query);
+        $result = DB::select($query, [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'wsId' => $wsId
+        ]);
 
         return $result;
     }
@@ -338,15 +348,14 @@ class StatsRepository
      * Retrieves statistics by category slug.
      *
      * @param string $categorySlug The slug of the category.
-     * @param int $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
+     * @param bool $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
      * @return stdClass
      */
-    public function statsByCategories(string $categorySlug, bool $isplanned = false): stdClass
+    public function statsByCategories(string $categorySlug, bool $isPlanned = false): stdClass
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
-        $isplanned = $isplanned ? true : false;
 
         $query = "
             SELECT 
@@ -364,19 +373,24 @@ class StatsRepository
                 AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
                 AND e.confirmed = true
-                AND e.planned in (false,$isplanned)
-                AND e.date_time >= '$startDate'
-                AND e.date_time < '$endDate'
-                AND e.workspace_id = $wsId
+                AND e.planned in (false,$isPlanned)
+                AND e.date_time >= :startDate
+                AND e.date_time < :endDate
+                AND e.workspace_id = :wsId
                 AND e.type IN ('expenses', 'incoming')
             WHERE 
-                c.slug = '$categorySlug'
+                c.slug = :categorySlug
             GROUP BY 
                 cc.type, c.name, c.id, c.uuid, c.slug
             ORDER BY
                 cc.type desc;";
 
-        $result = DB::select($query);
+        $result = DB::select($query, [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'wsId' => $wsId,
+            'categorySlug' => $categorySlug
+        ]);
 
         return $result[0];
     }
@@ -401,7 +415,7 @@ class StatsRepository
                 wallets AS a
             WHERE 
                 a.deleted_at IS NULL
-                AND a.exclude_from_stats = false
+                AND a.exclude_from_stats = 0
                 AND ( 
                     a.type = '".$walletsType[0]."'
                     OR a.type = '".$walletsType[1]."' 
@@ -430,8 +444,8 @@ class StatsRepository
                 entries AS e
             WHERE 
                 e.planned = true
-                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE) 
-                AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
+                AND EXTRACT(MONTH FROM e.date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
+                AND EXTRACT(YEAR FROM e.date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
                 AND e.confirmed = true
                 AND e.deleted_at IS NULL
                 AND e.exclude_from_stats = false
