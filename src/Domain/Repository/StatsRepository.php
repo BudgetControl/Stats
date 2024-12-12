@@ -415,7 +415,7 @@ class StatsRepository
                 wallets AS a
             WHERE 
                 a.deleted_at IS NULL
-                AND a.exclude_from_stats = 0
+                AND a.exclude_from_stats = false
                 AND ( 
                     a.type = '".$walletsType[0]."'
                     OR a.type = '".$walletsType[1]."' 
