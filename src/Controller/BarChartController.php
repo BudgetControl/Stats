@@ -71,7 +71,7 @@ class BarChartController extends ChartController
             );
 
             foreach($incomingRepository->expensesByLabels() as $label) {
-                if ($labels && !in_array($label->label_name, $labels)) {
+                if(is_null($label->total)) {
                     continue;
                 }
 
