@@ -75,7 +75,7 @@ class BarChartController extends ChartController
                     continue;
                 }
 
-                $labelObj = Label::where('id', $label->id)->first();
+                $labelObj = Label::where('id', $label->label_id)->first();
 
                 $barChart->addBar(
                     new BarChartBar(
