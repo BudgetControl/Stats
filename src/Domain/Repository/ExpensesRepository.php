@@ -21,7 +21,6 @@ class ExpensesRepository extends StatsRepository
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
             WHERE e.type IN ('expenses')
-            AND e.amount < 0
             AND e.exclude_from_stats = false
             AND e.deleted_at IS NULL
             AND e.confirmed = true
@@ -64,7 +63,6 @@ class ExpensesRepository extends StatsRepository
         WHERE 
             e.category_id = $categoryId
             AND e.type = 'expenses'
-            AND e.amount < 0
             AND e.exclude_from_stats = false
             AND e.deleted_at IS NULL
             AND e.confirmed = true
@@ -109,7 +107,6 @@ class ExpensesRepository extends StatsRepository
         LEFT JOIN 
             entries AS e ON e.category_id = c.id
             AND e.type = 'expenses'
-            AND e.amount < 0
             AND e.exclude_from_stats = false
             AND e.deleted_at IS NULL
             AND e.confirmed = true
@@ -164,7 +161,6 @@ class ExpensesRepository extends StatsRepository
                 labels AS l ON el.labels_id = l.id
             WHERE 
                 e.type IN ('expenses')
-                AND e.amount < 0
                 AND e.exclude_from_stats = false
                 AND e.deleted_at IS NULL
                 AND e.confirmed = true
