@@ -3,15 +3,16 @@
 namespace Budgetcontrol\Stats\Controller;
 
 use DateTime;
+use Illuminate\Support\Carbon;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChart;
+use Budgetcontrol\Stats\Domain\Repository\DebitRepository;
+use Budgetcontrol\Stats\Domain\Repository\SavingRepository;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartPoint;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartSeries;
-use Budgetcontrol\Stats\Domain\Repository\DebitRepository;
-use Illuminate\Support\Carbon;
 
 class LineChartController extends ChartController
 {
@@ -25,6 +26,7 @@ class LineChartController extends ChartController
         $incomingSeries = new LineChartSeries('incoming');
         $expensesSeries = new LineChartSeries('expenses');
         $debitSeries = new LineChartSeries('debit');
+        $savingtSeries = new LineChartSeries('savings');
 
         foreach ($params['date_time'] as $_ => $value) {
 
@@ -52,10 +54,18 @@ class LineChartController extends ChartController
             $endDate
             );
 
+            // savings
+            $savingRepository = new SavingRepository(
+                $arg['wsid'],
+                $startDate,
+                $endDate
+                );
+
             $yValue = max(
             $incomingRepository->statsIncoming()['total'],
             $expensesRepository->statsExpenses()['total'],
-            $debitRepository->statsDebits()['total']
+            $debitRepository->statsDebits()['total'],
+            $savingRepository->statsSevings()['total']
             );
 
             $incomingSeries->addDataPoint(
@@ -82,11 +92,20 @@ class LineChartController extends ChartController
             )
             );
 
+            $savingtSeries->addDataPoint(
+                new LineChartPoint(
+                    $savingRepository->statsSevings()['total'],
+                    $yValue,
+                    $startDate->format('M')
+                )
+            );
+
         }
 
         $lineChart->addSeries($incomingSeries);
         $lineChart->addSeries($expensesSeries);
         $lineChart->addSeries($debitSeries);
+        $lineChart->addSeries($savingtSeries);
         $results = $lineChart->toArray();
 
         return response($results, 200);
