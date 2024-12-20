@@ -184,18 +184,18 @@ class StatsController extends Controller {
 
     }
 
-    public function averageSavings(Request $request, Response $response, $arg) {
+     public function averageSavings(Request $request, Response $response, $arg) {
 
         $startDate = Carbon::now()->firstOfYear();
         $endDate = Carbon::now()->lastOfYear();
 
-        $repository = new StatsRepository(
+        $repository = new SavingRepository(
             $arg['wsid'],
             $startDate,
             $endDate
         );
-        $result = $repository->statsByCategories('savings');
-        $total = $result->total;
+        $result = $repository->statsSevings('savings');
+        $total = $result['total'];
         $currentAmount = round($total / 12);
 
         return response([
