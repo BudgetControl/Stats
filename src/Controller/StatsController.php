@@ -15,6 +15,7 @@ use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
 use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
+use Budgetcontrol\Stats\Domain\Repository\SavingRepository;
 
 class StatsController extends Controller {
 
