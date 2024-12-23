@@ -10,7 +10,8 @@ class SavingRepository extends StatsRepository{
      *
      * @return array An array containing the statistics for savings.
      */
-    public function statsSevings() {
+    public function statsSevings() 
+    {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();

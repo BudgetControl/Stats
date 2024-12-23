@@ -15,6 +15,7 @@ use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
 use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
+use Budgetcontrol\Stats\Domain\Repository\SavingRepository;
 
 class StatsController extends Controller {
 
@@ -189,13 +190,13 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfYear();
         $endDate = Carbon::now()->lastOfYear();
 
-        $repository = new StatsRepository(
+        $repository = new SavingRepository(
             $arg['wsid'],
             $startDate,
             $endDate
         );
-        $result = $repository->statsByCategories('savings');
-        $total = $result->total;
+        $result = $repository->statsSevings('savings');
+        $total = $result['total'];
         $currentAmount = round($total / 12);
 
         return response([
