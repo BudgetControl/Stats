@@ -61,6 +61,7 @@ class StatsRepository
             AND a.deleted_at is null
             AND e.deleted_at is null
             AND e.confirmed = true
+            AND a.archived = false
             AND e.planned = false
             AND e.date_time >= '$startDate'
             AND e.date_time < '$endDate'
@@ -89,6 +90,7 @@ class StatsRepository
             WHERE workspace_id = $wsId
             AND installement = false
             AND deleted_at is null
+            AND archived = false
             AND exclude_from_stats = false;
         ";
 
@@ -110,6 +112,7 @@ class StatsRepository
 
         $wallets = Wallet::with('currency')->where('workspace_id', $wsId)
             ->where('deleted_at', null)
+            ->where('archived', false)
             ->get();
         
         return $wallets->toArray();
@@ -128,7 +131,7 @@ class StatsRepository
         $query = "
             SELECT COALESCE(SUM(balance), 0) AS total_balance
             FROM wallets
-            WHERE workspace_id = $wsId AND deleted_at is null AND exclude_from_stats = false;
+            WHERE workspace_id = $wsId AND deleted_at is null AND archived = false AND exclude_from_stats = false;
         ";
 
         $result = DB::select($query);
@@ -178,6 +181,7 @@ class StatsRepository
         ) AS e ON a.id = e.account_id
         WHERE 
             a.deleted_at IS NULL
+            AND a.archived = false
             AND a.exclude_from_stats = false
             AND a.installement = false
             AND a.workspace_id = ?;
@@ -201,6 +205,7 @@ class StatsRepository
         $query = "
         select installement_value from wallets where installement = true 
         and deleted_at is null and invoice_date >= ? 
+        AND archived = false
         AND EXTRACT(MONTH FROM invoice_date) = EXTRACT(MONTH FROM CURRENT_DATE)
         and workspace_id = ? and balance < installement_value;
         ";
@@ -420,6 +425,7 @@ class StatsRepository
             WHERE 
                 a.deleted_at IS NULL
                 AND a.exclude_from_stats = false
+                AND a.archived = false
                 AND ( 
                     a.type = '".$walletsType[0]."'
                     OR a.type = '".$walletsType[1]."' 
