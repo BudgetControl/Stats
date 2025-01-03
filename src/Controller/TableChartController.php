@@ -23,9 +23,11 @@ class TableChartController extends ChartController
 
             $startDate = Carbon::rawParse($value['start']);
             $endDate = Carbon::rawParse($value['end']);
+             // count days between start and end
+            $days = $startDate->diff($endDate);
 
-            $startDatePrev = Carbon::rawParse($value['start'])->modify('-1 month');
-            $endDatePrev = Carbon::rawParse($value['end'])->modify('-1 month');
+            $startDatePrev = Carbon::rawParse($value['start'])->modify($days->days);
+            $endDatePrev = Carbon::rawParse($value['end'])->subDays($days->days);
 
             $expensesRepository = new ExpensesRepository($arg['wsid'], $startDate, $endDate);
             $expensesPrevRepository = new ExpensesRepository($arg['wsid'], $startDatePrev, $endDatePrev);
