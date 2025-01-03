@@ -5,6 +5,7 @@
 
 $app->get('/{wsid}/incoming', \Budgetcontrol\Stats\Controller\StatsController::class . ':incomingOfCurrentMonth');
 $app->get('/{wsid}/expenses', \Budgetcontrol\Stats\Controller\StatsController::class . ':expensesOfCurrentMonth');
+$app->get('/{wsid}/debits', \Budgetcontrol\Stats\Controller\StatsController::class . ':debitsOfCurrentMonth');
 $app->get('/{wsid}/total', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalOfCurrentMonth');
 $app->get('/{wsid}/wallets', \Budgetcontrol\Stats\Controller\StatsController::class . ':wallets');
 $app->get('/{wsid}/health', \Budgetcontrol\Stats\Controller\StatsController::class . ':health');
@@ -26,3 +27,4 @@ $app->get('/{wsid}/chart/apple-pie/expenses/label', \Budgetcontrol\Stats\Control
 $app->post('/{wsid}/stats/entries', \Budgetcontrol\Stats\Controller\StatsController::class . ':entries');
 
 $app->get('/monitor', \Budgetcontrol\Stats\Controller\Controller::class . ':monitor');
+

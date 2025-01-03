@@ -14,6 +14,7 @@ use Budgetcontrol\Stats\Domain\Entity\TableChart\TableChart;
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
+use Budgetcontrol\Stats\Domain\Repository\DebitRepository;
 use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
 use Budgetcontrol\Stats\Domain\Repository\SavingRepository;
 
@@ -55,6 +56,26 @@ class StatsController extends Controller {
         ],200);
 
     }
+
+    public function debitsOfCurrentMonth(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now()->firstOfMonth();
+        $endDate = Carbon::now()->lastOfMonth();
+
+        $repository = new DebitRepository($arg['wsid'],$startDate,$endDate);
+        $currentAmount = $repository->statsDebits()['total'];
+
+        $repository = new DebitRepository($arg['wsid'],$startDate->modify("-1 month"),$endDate->modify("-1 month"));
+        $previusAMount = $repository->statsDebits()['total'];
+
+        return response([
+            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $currentAmount, $previusAMount)),
+            "total" => (float) $currentAmount,
+            "total_passed" => $previusAMount,
+        ],200);
+
+    }
+
 
     public function totalOfCurrentMonth(Request $request, Response $response, $arg) {
 
