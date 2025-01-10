@@ -76,6 +76,32 @@ class StatsController extends Controller {
 
     }
 
+    public function totalNegativeDebits(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now();
+        $endDate = Carbon::now();
+
+        $repository = new DebitRepository($arg['wsid'],$startDate,$endDate);
+        $currentAmount = $repository->totalNegativeStatsDebits()['total'];
+
+        return response([
+            "total" => (float) $currentAmount,
+        ],200);
+    }
+
+    public function totalPositiveDebits(Request $request, Response $response, $arg) {
+
+        $startDate = Carbon::now();
+        $endDate = Carbon::now();
+
+        $repository = new DebitRepository($arg['wsid'],$startDate,$endDate);
+        $currentAmount = $repository->totalPositiveStatsDebits()['total'];
+
+        return response([
+            "total" => (float) $currentAmount,
+        ],200);
+    }
+
 
     public function totalOfCurrentMonth(Request $request, Response $response, $arg) {
 

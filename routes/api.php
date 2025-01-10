@@ -26,5 +26,8 @@ $app->get('/{wsid}/chart/apple-pie/expenses/label', \Budgetcontrol\Stats\Control
 
 $app->post('/{wsid}/stats/entries', \Budgetcontrol\Stats\Controller\StatsController::class . ':entries');
 
+$app->get('/{wsid}/debits/total-negative', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalNegativeDebits');
+$app->get('/{wsid}/debits/total-positive', \Budgetcontrol\Stats\Controller\StatsController::class . ':totalPositiveDebits');
+
 $app->get('/monitor', \Budgetcontrol\Stats\Controller\Controller::class . ':monitor');
 
