@@ -50,7 +50,7 @@ class DebitRepository extends StatsRepository{
         $wsId = $this->wsId;
 
         $query = "
-            SELECT COALESCE(SUM(e.balance), 0) AS total
+            SELECT COALESCE(SUM(p.balance), 0) AS total
             FROM payees AS p
             WHERE p.deleted_at is null
             AND p.balance < 0
@@ -75,7 +75,7 @@ class DebitRepository extends StatsRepository{
         $wsId = $this->wsId;
 
         $query = "
-            SELECT COALESCE(SUM(e.balance), 0) AS total
+            SELECT COALESCE(SUM(p.balance), 0) AS total
             FROM payees AS p
             WHERE p.deleted_at is null
             AND p.balance > 0
