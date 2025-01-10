@@ -27,7 +27,59 @@ class DebitRepository extends StatsRepository{
             AND e.deleted_at is null
             AND e.confirmed = true
             AND e.planned = false
+            AND e.date_time >= '$startDate'
+            AND e.date_time < '$endDate'
             AND e.workspace_id = $wsId;
+        ";
+
+        $result = DB::select($query);
+
+        return [
+            'total' => $result[0]->total
+        ];
+    }
+
+    /**
+     * Calculate the total amount of negative debits.
+     *
+     * This method aggregates all the negative debit entries and returns their total sum.
+     *
+     * @return array The total sum of negative debits.
+     */
+    public function totalNegativeStatsDebits(): array {
+        $wsId = $this->wsId;
+
+        $query = "
+            SELECT COALESCE(SUM(e.balance), 0) AS total
+            FROM payees AS p
+            WHERE p.deleted_at is null
+            AND p.balance < 0
+            AND p.workspace_id = $wsId;
+        ";
+
+        $result = DB::select($query);
+
+        return [
+            'total' => $result[0]->total
+        ];
+    }
+
+        /**
+     * Calculate the total amount of positive debits.
+     *
+     * This method aggregates all the positive debit entries and returns their total sum.
+     *
+     * @return array The total sum of positive debits.
+     */
+    public function totalPositiveStatsDebits():array {
+        $wsId = $this->wsId;
+
+        $query = "
+            SELECT COALESCE(SUM(e.balance), 0) AS total
+            FROM payees AS p
+            WHERE p.deleted_at is null
+            AND p.balance > 0
+            AND p.workspace_id = $wsId;
         ";
 
         $result = DB::select($query);
