@@ -206,11 +206,13 @@ class StatsController extends Controller {
 
     public function averageExpenses(Request $request, Response $response, $arg) {
 
+        // get the current month number
+        $months = Carbon::now()->month;
         $startDate = Carbon::now()->firstOfYear();
         $endDate = Carbon::now()->lastOfYear();
 
         $repository = new ExpensesRepository($arg['wsid'],$startDate,$endDate);
-        $currentAmount = round($repository->statsExpenses()['total'] / 12);
+        $currentAmount = round($repository->statsExpenses()['total'] / $months);
 
         return response([
             "total" => (float) $currentAmount,
@@ -220,11 +222,12 @@ class StatsController extends Controller {
 
     public function averageIncoming(Request $request, Response $response, $arg) {
 
+        $months = Carbon::now()->month;
         $startDate = Carbon::now()->firstOfYear();
         $endDate = Carbon::now()->lastOfYear();
 
         $repository = new IncomingRepository($arg['wsid'],$startDate,$endDate);
-        $currentAmount = round($repository->statsIncoming()['total'] / 12);
+        $currentAmount = round($repository->statsIncoming()['total'] / $months);
 
         return response([
             "total" => (float) $currentAmount,
@@ -234,6 +237,7 @@ class StatsController extends Controller {
 
      public function averageSavings(Request $request, Response $response, $arg) {
 
+        $months = Carbon::now()->month;
         $startDate = Carbon::now()->firstOfYear();
         $endDate = Carbon::now()->lastOfYear();
 
@@ -244,7 +248,7 @@ class StatsController extends Controller {
         );
         $result = $repository->statsSevings('savings');
         $total = $result['total'];
-        $currentAmount = round($total / 12);
+        $currentAmount = round($total / $months);
 
         return response([
             "total" => (float) $currentAmount,
