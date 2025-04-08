@@ -2,6 +2,7 @@
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Illuminate\Database\Capsule\Manager as DB;
+use Budgetcontrol\Library\Entity\Entry;
 
 class SavingRepository extends StatsRepository{
     
@@ -19,7 +20,7 @@ class SavingRepository extends StatsRepository{
         $query = "
             SELECT COALESCE(SUM(e.amount), 0) AS total
             FROM entries AS e
-            WHERE e.type in ('saving')
+            WHERE e.category_id = 62
             AND e.exclude_from_stats = false
             AND e.deleted_at is null
             AND e.confirmed = true
