@@ -308,13 +308,13 @@ class StatsRepository
                 AND e.date_time >= :startDate
                 AND e.date_time < :endDate
                 AND e.workspace_id = :wsId
-                AND e.type IN ('expenses', 'incoming')
+                AND e.type IN ('expenses', 'incoming', 'debits')
                 $addJoins
             GROUP BY 
                 cc.type, c.name, c.id, c.uuid, c.slug
                 ) as query
             WHERE 
-                query.category_type in ('incoming','expenses')
+                query.category_type in ('incoming','expenses', 'debits')
                 $addConditions
             ORDER BY
                 query.category_type desc;";
