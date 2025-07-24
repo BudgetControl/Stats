@@ -77,6 +77,10 @@ class BarChartController extends ChartController
 
                 $labelObj = Label::where('id', $label->label_id)->first();
 
+                if (!$labelObj) {
+                    continue;
+                }
+
                 $barChart->addBar(
                     new BarChartBar(
                         $label->total,
