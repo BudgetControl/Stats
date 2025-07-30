@@ -32,7 +32,7 @@ class StatsController extends Controller {
         $previusAMount = $repository->statsIncoming()['total'];
 
         return response([
-            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $currentAmount, $previusAMount)),
+            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $previusAMount, $currentAmount)),
             "total" => (float) $currentAmount,
             "total_passed" => $previusAMount,
         ],200);
@@ -50,7 +50,7 @@ class StatsController extends Controller {
         $previusAMount = $repository->statsExpenses()['total'];
 
         return response([
-            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $currentAmount, $previusAMount)),
+            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $previusAMount, $currentAmount)),
             "total" => (float) $currentAmount,
             "total_passed" => $previusAMount,
         ],200);
@@ -69,7 +69,7 @@ class StatsController extends Controller {
         $previusAMount = $repository->statsDebits()['total'];
 
         return response([
-            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $currentAmount, $previusAMount)),
+            "percentage" => round(PercentCalculator::calculatePercentage('margin_percentage', $previusAMount, $currentAmount)),
             "total" => (float) $currentAmount,
             "total_passed" => $previusAMount,
         ],200);
