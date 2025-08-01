@@ -183,7 +183,6 @@ class StatsRepository
             a.deleted_at IS NULL
             AND a.archived = false
             AND a.exclude_from_stats = false
-            AND a.installement = false
             AND a.workspace_id = ?;
         ";
 
@@ -197,23 +196,28 @@ class StatsRepository
      *
      * @return array The installment values.
      */
-    public function installementValues()
+    public function currentInstallmentValues()
     {
         $wsId = $this->wsId;
 
-        $date = Carbon::now()->toAtomString();
-        $query = "
-        select installement_value from wallets where installement = true 
-        and deleted_at is null and invoice_date >= ? 
-        AND archived = false
-        AND EXTRACT(MONTH FROM invoice_date) = EXTRACT(MONTH FROM CURRENT_DATE)
-        and workspace_id = ? and balance < installement_value;
-        ";
+        $walletTypes = [
+            EntityWallet::creditCard->value,
+            EntityWallet::creditCardRevolving->value
+        ];
 
-        $result = DB::select($query, [$date, $wsId]);
+        $wallets = Wallet::where('workspace_id', $wsId)
+            ->where('deleted_at', null)
+            ->where('archived', false)
+            ->whereIn('type', $walletTypes)
+            ->get();
 
-        return $result;
+        if ($wallets->isEmpty()) {
+            return [];
+        }
+
+        return $wallets;
     }
+    
 
     /**
      * Returns the total planned of the current month.

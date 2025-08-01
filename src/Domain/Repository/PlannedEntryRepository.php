@@ -98,4 +98,29 @@ class PlannedEntryRepository extends StatsRepository {
             'total' => $result[0]->total
         ];
     }
+
+    public function plannedOfPeriod() {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+        
+        $query = "
+            SELECT COALESCE(SUM(e.amount), 0) AS total
+            FROM entries AS e
+            WHERE 
+            e.exclude_from_stats = false
+            AND e.deleted_at IS NULL
+            AND e.confirmed = true
+            AND e.planned = true
+            AND e.date_time >= '$startDate'
+            AND e.date_time < '$endDate'
+            AND e.workspace_id = $wsId;
+        ";
+
+        $result = DB::select($query);
+
+        return [
+            'total' => $result[0]->total
+        ];
+    }
 }
