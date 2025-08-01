@@ -28,7 +28,7 @@ final class TotalInstallementValue implements StatsInterface
     }
 
     public function value(): float {
-        return $this->value;
+        return $this->value * -1; // Assuming the value is negative for expenses
     }
 
     public function entries(): array {
