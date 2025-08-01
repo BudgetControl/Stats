@@ -17,6 +17,7 @@ use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
 use Budgetcontrol\Stats\Domain\Repository\DebitRepository;
 use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
 use Budgetcontrol\Stats\Domain\Repository\SavingRepository;
+use Budgetcontrol\Stats\Services\StatsService;
 
 class StatsController extends Controller {
 
@@ -153,18 +154,14 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new StatsRepository(
+        $service = new StatsService(
             $arg['wsid'],
             $startDate,
             $endDate
         );
-        $planned = $repository->totalWithPlannedOfCurrentMonth();
-        $installement_values = $repository->installementValues();
-        $total = BigNumber::sum($planned->balance_without_installement, $planned->planned_amount_total);
-        foreach($installement_values as $value) {
-            $total = BigNumber::sum($total, $value->installement_value);
-        }
-        /** @var BigInteger $total */
+        $values = $service->willArriveAtTheEndOfTheMonth();
+        $total = $values->get();
+
         return response(['total' => $total->toFloat()],200);
     }
 
