@@ -201,7 +201,6 @@ class StatsRepository
         $wsId = $this->wsId;
 
         $walletTypes = [
-            EntityWallet::creditCard->value,
             EntityWallet::creditCardRevolving->value
         ];
 

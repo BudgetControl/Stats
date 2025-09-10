@@ -10,6 +10,7 @@ use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\DataValue;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\TotalInstallementValue;
 use Budgetcontrol\Stats\Domain\ValueObjects\StatsCalculator;
+use Illuminate\Support\Facades\Log;
 
 class StatsService
 {
@@ -32,6 +33,7 @@ class StatsService
             $incoming = $this->fetchRepositoryData(IncomingRepository::class, 'statsIncoming');
             $plannedEntries = $this->fetchRepositoryData(PlannedEntryRepository::class, 'plannedOfPeriod');
             $creditCards = $this->fetchRepositoryData(StatsRepository::class, 'currentInstallmentValues');
+            $walletsBalance = $this->fetchRepositoryData(StatsRepository::class, 'total');
 
             $installementValues = new TotalInstallementValue($creditCards);
 
@@ -39,11 +41,12 @@ class StatsService
             $dataValue->sum((float) $expenses['total']);
             $dataValue->sum((float) $plannedEntries['total']);
             $dataValue->sum((float) $incoming['total']);
+            $dataValue->sum((float) $walletsBalance['total']);
 
             return StatsCalculator::create([$dataValue, $installementValues]);
         } catch (\Exception $e) {
             // Log the error and rethrow it
-            error_log($e->getMessage());
+            Log::error($e->getMessage());
             throw $e;
         }
     }
