@@ -2,9 +2,9 @@
 declare(strict_types=1);
 namespace Budgetcontrol\Stats\Services\Transactions;
 
-use Budgetcontrol\Stats\Services\ElastichSearchService;
+use Budgetcontrol\Stats\Services\ElasticSearchService;
 
-class Search extends ElastichSearchService
+class Search extends ElasticSearchService
 {
 
     /**

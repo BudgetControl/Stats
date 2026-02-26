@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Facade;
  * @see \Budgetcontrol\Stats\Services\Clients\ElasticSearchClient
  */
 
-final class ElastichSearch extends Facade
+final class ElasticSearch extends Facade
 {
     protected static function getFacadeAccessor(): string
     {

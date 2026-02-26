@@ -2,9 +2,9 @@
 declare(strict_types=1);
 namespace Budgetcontrol\Stats\Services\Transactions;
 
-use Budgetcontrol\Stats\Services\ElastichSearchService;
+use Budgetcontrol\Stats\Services\ElasticSearchService;
 
-class FinanceStats extends ElastichSearchService
+class FinanceStats extends ElasticSearchService
 {
     /**
      * Dashboard mensile con tutte le statistiche principali

@@ -1,6 +1,6 @@
 <?php
 
-$elastichsearch = \Budgetcontrol\Stats\Services\Clients\ElasticSearchClient::getInstance(
+$Elasticsearch = \Budgetcontrol\Stats\Services\Clients\ElasticSearchClient::getInstance(
     env('ELASTICSEARCH_INDEX', 'transactions'),
     env('ELASTICSEARCH_HOST', 'http://localhost:9200'),
     env('ELASTICSEARCH_USERNAME', 'elastic'),
@@ -8,4 +8,4 @@ $elastichsearch = \Budgetcontrol\Stats\Services\Clients\ElasticSearchClient::get
 );
 
 // create index if not exists
-$elastichsearch->createIndexIfNotExists();
+$Elasticsearch->createIndexIfNotExists();

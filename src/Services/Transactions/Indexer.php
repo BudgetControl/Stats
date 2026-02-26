@@ -3,12 +3,14 @@ declare(strict_types=1);
 namespace Budgetcontrol\Stats\Services\Transactions;
 
 use Budgetcontrol\Library\Model\Entry;
-use Budgetcontrol\Stats\Services\ElastichSearchService;
+use Budgetcontrol\Stats\Domain\Entity\ElasticTransaction;
+use Budgetcontrol\Stats\Services\ElasticSearchService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 use Elastic\Elasticsearch\Exception\ElasticsearchException;
 
-class Indexer extends ElastichSearchService
+class Indexer extends ElasticSearchService
 {
 
     /**
@@ -38,7 +40,7 @@ class Indexer extends ElastichSearchService
      * @param array<int:Entry> $entrys
      * @return void
      */
-    public function bulkIndexTransactions(array $entrys): void
+    public function bulkIndexTransactions(Collection $entrys): void
     {
         $params = ['body' => []];
         
@@ -51,7 +53,6 @@ class Indexer extends ElastichSearchService
             $params['body'][] = [
                 'index' => [
                     '_index' => $this->index,
-                    '_id' => $entry->getId(),
                 ],
             ];
             
@@ -72,40 +73,7 @@ class Indexer extends ElastichSearchService
      */
     protected function buildEntry(Entry $entry): array
     {
-        return
-            [
-                'uuid' => $entry->uuid,
-                'note' => $entry->note,
-                'amount' => (float) $entry->amount,
-                'type' => $entry->type,
-                'payment_type' => $entry->payment_type,
-                'currency' => $entry->currency()->icon,
-                'category_id' => $entry->category_id,
-                'category_name' => $entry->subCategory()->name,
-                'wallet_id' => $entry->account_id,
-                'wallet' => $entry->wallet()->toArray(),
-                'date' => Carbon::createFromDate($entry->date_time)->format('Y-m-d H:i:s'),
-                'timestamp' => Carbon::createFromDate($entry->date_time)->getTimestamp(),
-                'year' => (int) Carbon::createFromDate($entry->date_time)->format('Y'),
-                'month' => (int) Carbon::createFromDate($entry->date_time)->format('m'),
-                'day' => (int) Carbon::createFromDate($entry->date_time)->format('d'),
-                'day_of_week' => Carbon::createFromDate($entry->date_time)->format('N'), // 1 (Monday) - 7 (Sunday)
-                'week_of_year' => Carbon::createFromDate($entry->date_time)->format('W'),
-                'quarter' => Carbon::createFromDate($entry->date_time)->quarter,
-                'tags' => $entry->labels()->toArray(), // array di tag
-                'have_payee' => $entry->payee_id !== null,
-                'payee' => $entry->payee()->toArray(),
-                'confirmed' => $entry->confirmed,
-                'planned' => $entry->planned,
-                'have_warranty' => $entry->waranty,
-                'is_transfer' => $entry->transfer,
-                'transfer_relation' => [
-                    'transfer_from' => $entry->transfer_id,
-                    'transfer_to' => $entry->transfer_relation,
-                ],
-                'geolocalization' => $entry->geolocation,
-                'created_at' => $entry->created_at,
-                'updated_at' => $entry->updated_at,
-            ];
+        $transaction = new ElasticTransaction($entry->toArray());
+        return $transaction->toArray();
     }
 }

@@ -31,7 +31,7 @@ require_once __DIR__ . '/../config/logger.php';
 require_once __DIR__ . '/../config/cryptable.php';
 
 // Set up the Elasticsearch client
-require_once __DIR__ . '/../config/elastich-search.php';
+require_once __DIR__ . '/../config/Elastic-search.php';
 
 // Set up the Facade application
 Facade::setFacadeApplication([

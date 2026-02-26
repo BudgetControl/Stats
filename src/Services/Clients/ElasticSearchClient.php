@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace Budgetcontrol\Stats\Services\Clients;
 
+use Budgetcontrol\Stats\Domain\Entity\ElasticTransaction;
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
 use Illuminate\Support\Facades\Log;
@@ -108,62 +109,7 @@ class ElasticSearchClient
                         ],
                     ],
                 ],
-                'mappings' => [
-                    'properties' => [
-                        'uuid' => ['type' => 'keyword'],
-                        'note' => [
-                            'type' => 'text',
-                            'analyzer' => 'my_analyzer',
-                            'fields' => [
-                                'keyword' => [
-                                    'type' => 'keyword',
-                                ],
-                            ],
-                        ],
-                        'amount' => ['type' => 'float'],
-                        'type' => ['type' => 'keyword'],
-                        'payment_type' => ['type' => 'keyword'],
-                        'currency' => ['type' => 'keyword'],
-                        'category_id' => ['type' => 'integer'],
-                        'category_name' => ['type' => 'keyword'],
-                        'wallet_id' => ['type' => 'integer'],
-                        'wallet' => [
-                            'type' => 'object',
-                            'enabled' => true
-                        ],
-                        'date' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss'],
-                        'timestamp' => ['type' => 'long'],
-                        'year' => ['type' => 'integer'],
-                        'month' => ['type' => 'integer'],
-                        'day' => ['type' => 'integer'],
-                        'day_of_week' => ['type' => 'integer'],
-                        'week_of_year' => ['type' => 'integer'],
-                        'quarter' => ['type' => 'integer'],
-                        'tags' => [
-                            'type' => 'object',
-                            'enabled' => true
-                        ],
-                        'have_payee' => ['type' => 'boolean'],
-                        'payee' => [
-                            'type' => 'object',
-                            'enabled' => true
-                        ],
-                        'confirmed' => ['type' => 'boolean'],
-                        'planned' => ['type' => 'boolean'],
-                        'have_warranty' => ['type' => 'boolean'],
-                        'is_transfer' => ['type' => 'boolean'],
-                        'transfer_relation' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'transfer_from' => ['type' => 'keyword'],
-                                'transfer_to' => ['type' => 'keyword']
-                            ]
-                        ],
-                        'geolocalization' => ['type' => 'geo_point'],
-                        'created_at' => ['type' => 'date'],
-                        'updated_at' => ['type' => 'date'],
-                    ],
-                ],
+                'mappings' => ElasticTransaction::mapping(),
             ],
         ];
 

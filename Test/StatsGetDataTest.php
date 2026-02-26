@@ -98,7 +98,7 @@ class StatsGetDataTest extends TestCase
         $response->assertJsonStructure(self::RESPONSE);
 
         $test_amount = $response['data']['total'];
-        $this->assertTrue($test_amount >planned = true);
+        $this->assertTrue($test_amount->planned = true);
     }
 
     /**
@@ -114,7 +114,7 @@ class StatsGetDataTest extends TestCase
         $response->assertJsonStructure(self::RESPONSE);
 
         $test_amount = $response['data']['total'];
-        $this->assertTrue($test_amount >planned = true);
+        $this->assertTrue($test_amount->planned = true);
     }
 
     /**
