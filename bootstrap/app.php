@@ -30,10 +30,14 @@ require_once __DIR__ . '/../config/logger.php';
 // Set up the Cryptable service
 require_once __DIR__ . '/../config/cryptable.php';
 
+// Set up the Elasticsearch client
+require_once __DIR__ . '/../config/elastich-search.php';
+
 // Set up the Facade application
 Facade::setFacadeApplication([
     'log' => $logger,
     'date' => new Date(),
     'crypt' => $crypt,
-    'bc-math' => new BcMathNumber(0)
+    'bc-math' => new BcMathNumber(0),
+    'elasticsearch' => $elasticsearchClient
 ]);

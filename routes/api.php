@@ -31,3 +31,5 @@ $app->get('/{wsid}/debits/total-positive', \Budgetcontrol\Stats\Controller\Stats
 
 $app->get('/monitor', \Budgetcontrol\Stats\Controller\Controller::class . ':monitor');
 
+// private api for internal use
+$app->get('/elastichsearch/{wsid}/index', "");

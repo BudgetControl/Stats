@@ -90,7 +90,7 @@ final class TotalInstallementValue implements StatsInterface
             );
         }
 
-        if($wallet->installement_value < $balance) {
+        if($wallet->installement_value < $balance && $wallet->installement === true) {
             return $wallet->installement_value;
         }
 
