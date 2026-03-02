@@ -15,8 +15,6 @@ class TableChartController extends ChartController
     public function expensesCategoryByDate(Request $request, Response $response, $arg): Response
     {
         $params = $request->getQueryParams();
-        $categories = empty($params['categories']) ? null : $params['categories'];
-
         $tableChart = new TableChart();
 
         foreach ($params['date_time'] as $_ => $value) {
@@ -29,19 +27,16 @@ class TableChartController extends ChartController
             $startDatePrev = Carbon::rawParse($value['start'])->subDays($days);
             $endDatePrev = Carbon::rawParse($value['end'])->subDays($days);
 
-            $expensesRepository = new ExpensesRepository($arg['wsid'], $startDate, $endDate);
-            $expensesPrevRepository = new ExpensesRepository($arg['wsid'], $startDatePrev, $endDatePrev);
-
-            $expensesValue = $expensesRepository->expensesByCategories();
-            $expensesVluePrev = $expensesPrevRepository->expensesByCategories();
+            $expensesResults = ExpensesRepository::setup($arg['wsid'], $startDate, $endDate)->expensesByCategories();
+            $expensesPrevResults = ExpensesRepository::setup($arg['wsid'], $startDatePrev, $endDatePrev)->expensesByCategories();
 
             /** @var \Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory $expenses */
-            foreach ($expensesValue as $expenses) {
+            foreach ($expensesResults as $expenses) {
 
                 $tableChart->addRows(
                     new TableRowChart(
                         $expenses->total,
-                        $expensesVluePrev[$expenses->categorySlug]->total ?? 0,
+                        $expensesPrevResults[$expenses->categorySlug]->total ?? 0,
                         $expenses->categorySlug,
                         'expenses',
                     )

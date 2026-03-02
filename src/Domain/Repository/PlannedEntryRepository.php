@@ -5,10 +5,16 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Budgetcontrol\Library\Definition\Period;
 use Budgetcontrol\Library\Entity\Entry;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Database\Capsule\Manager as DB;
 
-class PlannedEntryRepository extends StatsRepository {
+class PlannedEntryRepository extends StatsRepository implements TransactionRepositoryInterface {
     
+    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
+    {
+        return new self($wsId, $startDate, $endDate);
+    }
     /**
      * Retrieves the planned expenses.
      *

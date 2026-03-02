@@ -30,6 +30,10 @@
         "budgetcontrol/application-tests": {
             "type": "vcs",
             "url": "https://github.com/BudgetControl/ApplicationTests.git"
+        },
+        "budgetcontrol/elasticsearch": {
+            "type": "path",
+            "url": "./ElasticSearchService"
         }
     },
     "require": {
@@ -56,7 +60,7 @@
         "budgetcontrol/cryptable": "^v0.1",
         "budgetcontrol/library": "^v1.3",
         "bref/bref": "~2.4.1",
-        "elasticsearch/elasticsearch": "^8.19"
+        "budgetcontrol/elasticsearch": "dev-main"
     },
     "require-dev": {
         "nikic/php-parser": "^5.0",
@@ -77,7 +81,7 @@
             "email": "marco.defelice@mlabfactory.it"
         }
     ],
-    "minimum-stability": "beta",
+    "minimum-stability": "dev",
     "config": {
         "allow-plugins": {
             "php-http/discovery": true

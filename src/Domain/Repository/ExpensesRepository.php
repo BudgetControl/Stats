@@ -2,16 +2,25 @@
 
 namespace Budgetcontrol\Stats\Domain\Repository;
 
-use DateTime;
-use Illuminate\Database\Capsule\Manager as DB;
-use Budgetcontrol\Stats\Domain\Model\Workspace;
+use Budgetcontrol\Library\Entity\Entry;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
+use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory;
+use Budgetcontrol\Stats\Facade\SearchService;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
+use Carbon\Carbon;
+use Illuminate\Database\Capsule\Manager as DB;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
-class ExpensesRepository extends StatsRepository
+class ExpensesRepository extends StatsRepository implements TransactionRepositoryInterface
 {
+    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
+    {
+        return new self($wsId, $startDate, $endDate);
+    }
 
-    public function statsExpenses()
+    public function statsExpenses(): array
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
@@ -88,7 +97,7 @@ class ExpensesRepository extends StatsRepository
     /**
      * Retrieves expenses categorized by all categories.
      *
-     * @return array of ExpensesCategory Returns an instance of ExpensesCategory containing the categorized expenses.
+     * @return array<String:ExpensesCategory of ExpensesCategory Returns an instance of ExpensesCategory containing the categorized expenses.
      */
     public function expensesByCategories(): array
     {
@@ -96,41 +105,28 @@ class ExpensesRepository extends StatsRepository
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $query = "
-       SELECT 
-            c.id AS category_id,
-            c.name AS category_name,
-            c.slug AS category_slug,
-            COALESCE(SUM(e.amount), 0) AS total
-        FROM 
-            sub_categories AS c
-        LEFT JOIN 
-            entries AS e ON e.category_id = c.id
-            AND e.type = 'expenses'
-            AND e.exclude_from_stats = false
-            AND e.deleted_at IS NULL
-            AND e.confirmed = true
-            AND e.planned = false
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND e.workspace_id = $wsId
-        GROUP BY
-            c.id, c.name, c.slug;
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange( $startDate, $endDate)
+            ->setType(Entry::expenses->value);
 
-        ";
+        $agregator = ElasticAggregator::create($filters)
+            ->groupByCategory();
 
-        $result = DB::select($query);
+        $results = SearchService::aggregate($agregator);
 
-        if (empty($result)) {
-            throw new NotFoundResourceException('Something went wrong');
+        if(empty($results)) {
+            return [];
         }
 
-        foreach ($result as $value) {
-            $data[$value->category_slug] = new ExpensesCategory(
-                $value->total,
-                $value->category_slug,
-                $value->category_id,
-                $value->category_name
+        /** @var \BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator $results */
+        foreach ($results as $value) {
+            $aggregation = $value->aggregations();
+            $data[$aggregation->category_slug] = new ExpensesCategory(
+                $aggregation->total,
+                $aggregation->category_slug,
+                $aggregation->category_id,
+                $aggregation->category_name
             );
         }
 
@@ -184,5 +180,39 @@ class ExpensesRepository extends StatsRepository
         }
 
         return $results;
+    }
+
+    // ============ TransactionRepositoryInterface Implementation ============
+
+    public function getStats(): array
+    {
+        return $this->statsExpenses();
+    }
+
+    public function getByCategory(?int $categoryId = null): array
+    {
+        if ($categoryId !== null) {
+            return $this->expensesByCategory($categoryId)->toArray();
+        }
+        return $this->expensesByCategory(null);
+    }
+
+    public function getTransactionType(): string
+    {
+        return 'expenses';
+    }
+
+    public function isPositiveAmount(): bool
+    {
+        return false; // Expenses are typically negative amounts
+    }
+
+    public function getDefaultFilters(): ElasticFilter
+    {
+        return ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setType('expenses')
+            ->setStartDate($this->startDate->toDateString())
+            ->setEndDate($this->endDate->toDateString());
     }
 }

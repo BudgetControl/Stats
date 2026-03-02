@@ -2,19 +2,24 @@
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Budgetcontrol\Library\Entity\Wallet;
-use DateTime;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
 use Illuminate\Database\Capsule\Manager as DB;
-use Budgetcontrol\Stats\Domain\Model\Workspace;
-use Symfony\Component\Translation\Exception\NotFoundResourceException;
+use Carbon\Carbon;
 
-class DebitRepository extends StatsRepository{
-    
+class DebitRepository extends StatsRepository implements TransactionRepositoryInterface {
+
+    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
+    {
+        return new self($wsId, $startDate, $endDate);
+    }
+
     /**
      * Retrieves statistics for debits.
      *
      * @return array An array containing the statistics for debits.
      */
-    public function statsDebits() {
+    public function statsDebits(): array
+    {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();

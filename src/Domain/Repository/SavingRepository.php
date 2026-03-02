@@ -1,11 +1,17 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Repository;
 
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Database\Capsule\Manager as DB;
-use Budgetcontrol\Library\Entity\Entry;
 
-class SavingRepository extends StatsRepository{
+class SavingRepository extends StatsRepository implements TransactionRepositoryInterface{
     
+    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
+    {
+        return new self($wsId, $startDate, $endDate);
+    }
+
     /**
      * Retrieves statistics for savings.
      *

@@ -1,12 +1,18 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Repository;
 
-use DateTime;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
 use Illuminate\Database\Capsule\Manager as DB;
+use Carbon\Carbon;
 
-class IncomingRepository extends StatsRepository {
+class IncomingRepository extends StatsRepository implements TransactionRepositoryInterface {
     
-    public function statsIncoming() {
+    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
+    {
+        return new self($wsId, $startDate, $endDate);
+    }
+
+    public function statsIncoming(): array {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
@@ -33,7 +39,7 @@ class IncomingRepository extends StatsRepository {
         ];
     }
 
-    public function incomingByCategory()
+    public function incomingByCategory(?int $categoryId = null): array
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
