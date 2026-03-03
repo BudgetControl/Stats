@@ -1,8 +1,11 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Repository;
 
+use Budgetcontrol\Library\Entity\Entry;
 use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
-use Illuminate\Database\Capsule\Manager as DB;
+use Budgetcontrol\Stats\Facade\SearchService;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
 
 class IncomingRepository extends StatsRepository implements TransactionRepositoryInterface {
@@ -17,25 +20,18 @@ class IncomingRepository extends StatsRepository implements TransactionRepositor
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $query = "
-            SELECT COALESCE(SUM(e.amount), 0) AS total
-            FROM entries AS e
-            WHERE e.type IN ('incoming')
-            AND e.amount > 0
-            AND e.exclude_from_stats = false
-            AND e.deleted_at IS NULL
-            AND e.confirmed = true
-            AND e.planned = false
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND e.workspace_id = $wsId;
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange( $startDate, $endDate)
+            ->setType(type: Entry::expenses->value);
 
-        ";
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
 
-        $result = DB::select($query);
+        $results = SearchService::aggregate($agregator);
 
         return [
-            'total' => $result[0]->total
+            'total' => $results->total_amount ?? 0.0
         ];
     }
 
@@ -45,39 +41,21 @@ class IncomingRepository extends StatsRepository implements TransactionRepositor
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $query = "
-            SELECT 
-                c.id AS category_id,
-                c.name AS category_name,
-                c.slug AS category_slug,
-                COALESCE(SUM(e.amount), 0) AS total
-            FROM 
-                entries AS e
-            JOIN 
-                wallets AS a ON e.account_id = a.id
-            JOIN 
-                sub_categories AS c ON e.category_id = c.id
-            WHERE 
-                e.type IN ('incoming')
-                AND e.amount > 0
-                AND a.installement = false
-                AND e.exclude_from_stats = false
-                AND a.exclude_from_stats = false
-                AND a.deleted_at IS NULL
-                AND e.deleted_at IS NULL
-                AND e.confirmed = true
-                AND e.planned = false
-                AND e.date_time >= '$startDate'
-                AND e.date_time < '$endDate'
-                AND a.workspace_id = $wsId
-            GROUP BY 
-                c.id, c.name, c.slug;
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange( $startDate, $endDate)
+            ->setType(Entry::expenses->value);
 
-        ";
+        $agregator = ElasticAggregator::create($filters)
+            ->groupByCategory(1000, $categoryId);
 
-        $result = DB::select($query);
+        $results = SearchService::aggregate($agregator);
 
-        return $result;
+        if(empty($results)) {
+            return [];
+        }
+
+        return $results;
     }
 
     public function incomingByLabels()
@@ -86,39 +64,21 @@ class IncomingRepository extends StatsRepository implements TransactionRepositor
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $query = "
-            SELECT 
-                l.id AS label_id,
-                l.name AS label_name,
-                COALESCE(SUM(e.amount), 0) AS total
-            FROM 
-                entries AS e
-            JOIN 
-                wallets AS a ON e.account_id = a.id
-            LEFT JOIN 
-                entry_labels AS el ON e.id = el.entry_id
-            LEFT JOIN 
-                labels AS l ON el.labels_id = l.id
-            WHERE 
-                e.type IN ('incoming')
-                AND e.amount > 0
-                AND a.installement = false
-                AND e.exclude_from_stats = false
-                AND a.exclude_from_stats = false
-                AND a.deleted_at IS NULL
-                AND e.deleted_at IS NULL
-                AND e.confirmed = true
-                AND e.planned = false
-                AND e.date_time >= '$startDate'
-                AND e.date_time < '$endDate'
-                AND a.workspace_id = $wsId
-            GROUP BY 
-                l.id, l.name;
 
-        ";
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange( $startDate, $endDate)
+            ->setType(Entry::expenses->value);
 
-        $result = DB::select($query);
+        $agregator = ElasticAggregator::create($filters)
+            ->groupByTag();
 
-        return $result;
+        $results = SearchService::aggregate($agregator);
+
+        if(empty($results)) {
+            return [];
+        }
+
+        return $results;
     }
 }

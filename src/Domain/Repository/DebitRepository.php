@@ -1,9 +1,14 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Repository;
 
-use Budgetcontrol\Library\Entity\Wallet;
+use Budgetcontrol\Library\Entity\Entry;
+use Budgetcontrol\Library\Entity\Wallet as EntityWallet;
+use Budgetcontrol\Library\Model\Payee;
+use Budgetcontrol\Stats\Domain\Model\Wallet;
 use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
-use Illuminate\Database\Capsule\Manager as DB;
+use Budgetcontrol\Stats\Facade\SearchService;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
 
 class DebitRepository extends StatsRepository implements TransactionRepositoryInterface {
@@ -24,23 +29,22 @@ class DebitRepository extends StatsRepository implements TransactionRepositoryIn
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $query = "
-            SELECT COALESCE(SUM(e.amount), 0) AS total
-            FROM entries AS e
-            WHERE e.type in ('debit')
-            AND e.exclude_from_stats = false
-            AND e.deleted_at is null
-            AND e.confirmed = true
-            AND e.planned = false
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND e.workspace_id = $wsId;
-        ";
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::debit->value);
 
-        $result = DB::select($query);
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return ['total' => 0.0];
+        }
 
         return [
-            'total' => $result[0]->total
+            'total' => $results[0]->aggregations()->total ?? 0.0
         ];
     }
 
@@ -51,71 +55,76 @@ class DebitRepository extends StatsRepository implements TransactionRepositoryIn
      *
      * @return array The total sum of negative debits.
      */
-    public function totalNegativeStatsDebits(): array {
-        $wsId = $this->wsId;
+    public function totalNegativeStatsDebits(): array
+    {
+        $total = Payee::where('workspace_id', $this->wsId)
+            ->whereNull('deleted_at')
+            ->where('balance', '<', 0)
+            ->sum('balance');
 
-        $query = "
-            SELECT COALESCE(SUM(p.balance), 0) AS total
-            FROM payees AS p
-            WHERE p.deleted_at is null
-            AND p.balance < 0
-            AND p.workspace_id = $wsId;
-        ";
-
-        $result = DB::select($query);
-
-        return [
-            'total' => $result[0]->total
-        ];
+        return ['total' => (float) $total];
     }
 
-        /**
+    /**
      * Calculate the total amount of positive debits.
      *
      * This method aggregates all the positive debit entries and returns their total sum.
      *
      * @return array The total sum of positive debits.
      */
-    public function totalPositiveStatsDebits():array {
-        $wsId = $this->wsId;
+    public function totalPositiveStatsDebits(): array
+    {
+        $total = Payee::where('workspace_id', $this->wsId)
+            ->whereNull('deleted_at')
+            ->where('balance', '>', 0)
+            ->sum('balance');
 
-        $query = "
-            SELECT COALESCE(SUM(p.balance), 0) AS total
-            FROM payees AS p
-            WHERE p.deleted_at is null
-            AND p.balance > 0
-            AND p.workspace_id = $wsId;
-        ";
-
-        $result = DB::select($query);
-
-        return [
-            'total' => $result[0]->total
-        ];
+        return ['total' => (float) $total];
     }
 
     /**
      * Retrieves the debit of credit cards.
-     *
-     * @return void
      */
-    public function debitOfCreditCards() {
-        $wsId = $this->wsId;
-        
-        $query = "
-            SELECT COALESCE(SUM(w.balance), 0) AS total
-            FROM wallets AS w
-            WHERE w.type in ('".Wallet::creditCardRevolving->value."')
-            AND w.exclude_from_stats = false
-            AND w.installement = true
-            AND w.deleted_at is null
-            AND w.workspace_id = $wsId;
-        ";
+    public function debitOfCreditCards(): array
+    {
+        $total = Wallet::where('workspace_id', $this->wsId)
+            ->whereIn('type', [EntityWallet::creditCardRevolving->value])
+            ->where('exclude_from_stats', false)
+            ->where('installement', true)
+            ->whereNull('deleted_at')
+            ->sum('balance');
 
-        $result = DB::select($query);
+        return ['total' => (float) $total];
+    }
 
-        return [
-            'total' => $result[0]->total
-        ];
+    // ============ TransactionRepositoryInterface Implementation ============
+
+    public function getStats(): array
+    {
+        return $this->statsDebits();
+    }
+
+    public function getByCategory(?int $categoryId = null): array
+    {
+        return [];
+    }
+
+    public function getTransactionType(): string
+    {
+        return Entry::debit->value;
+    }
+
+    public function isPositiveAmount(): bool
+    {
+        return false;
+    }
+
+    public function getDefaultFilters(): ElasticFilter
+    {
+        return ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setType(Entry::debit->value)
+            ->setStartDate($this->startDate->toDateString())
+            ->setEndDate($this->endDate->toDateString());
     }
 }

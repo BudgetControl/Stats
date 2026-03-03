@@ -167,7 +167,11 @@ class PercentCalculator
      */
     private static function calculateMarginPercentage($firstNumber, $secondNumber): float
     {
-        return (($secondNumber - $firstNumber) / abs($firstNumber)) * 100;
+        try {
+            return (($secondNumber - $firstNumber) / abs($firstNumber)) * 100;
+        } catch (DivisionByZeroError $e) {
+            return 0;
+        }
     }
 
     /**

@@ -3,19 +3,19 @@
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Brick\Math\BigNumber;
+use Budgetcontrol\Library\Entity\Entry;
 use Budgetcontrol\Library\Entity\Wallet as EntityWallet;
+use Budgetcontrol\Stats\Domain\Entity\ElasticTransaction;
 use Budgetcontrol\Stats\Domain\Model\Wallet;
-use BudgetcontrolLibs\ElasticSearch\Services\Transactions\SearchService;
-use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
 use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
-use Budgetcontrol\Stats\Domain\Entity\ElasticTransaction;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
+use Budgetcontrol\Stats\Facade\SearchService;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
-abstract class StatsRepository implements StatsRepositoryInterface
+class StatsRepository implements StatsRepositoryInterface
 {
 
     protected int $wsId;
@@ -53,28 +53,16 @@ abstract class StatsRepository implements StatsRepositoryInterface
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $query = "
-            SELECT COALESCE(SUM(e.amount), 0) AS total
-            FROM entries AS e
-            JOIN wallets AS a ON e.account_id = a.id
-            WHERE e.type in ('expenses', 'incoming')
-            AND e.exclude_from_stats = false
-            AND a.exclude_from_stats = false
-            AND a.installement = false
-            AND a.deleted_at is null
-            AND e.deleted_at is null
-            AND e.confirmed = true
-            AND a.archived = false
-            AND e.planned = false
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND a.workspace_id = $wsId;
-        ";
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange( $startDate, $endDate)
+            ->setType(Entry::expenses->value);
 
-        $result = DB::select($query);
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
 
         return [
-            'total' => $result[0]->total
+            'total' => $agregator->total_amount ?? 0.0
         ];
     }
 
@@ -85,22 +73,15 @@ abstract class StatsRepository implements StatsRepositoryInterface
      */
     public function total(): array 
     {
-        $wsId = $this->wsId;
-
-        $query = "
-            SELECT COALESCE(SUM(balance), 0) AS total_balance
-            FROM wallets
-            WHERE workspace_id = $wsId
-            AND installement = false
-            AND deleted_at is null
-            AND archived = false
-            AND exclude_from_stats = false;
-        ";
-
-        $result = DB::select($query);
+        $total = Wallet::where('workspace_id', $this->wsId)
+            ->where('installement', false)
+            ->whereNull('deleted_at')
+            ->where('archived', false)
+            ->where('exclude_from_stats', false)
+            ->sum('balance');
 
         return [
-            'total' => (float) $result[0]->total_balance
+            'total' => (float) $total
         ];
     }
 
@@ -128,20 +109,15 @@ abstract class StatsRepository implements StatsRepositoryInterface
      */
     public function health()
     {
-
-        $wsId = $this->wsId;
-
-        $query = "
-            SELECT COALESCE(SUM(balance), 0) AS total_balance
-            FROM wallets
-            WHERE workspace_id = $wsId AND deleted_at is null AND archived = false AND exclude_from_stats = false;
-        ";
-
-        $result = DB::select($query);
+        $total = Wallet::where('workspace_id', $this->wsId)
+            ->whereNull('deleted_at')
+            ->where('archived', false)
+            ->where('exclude_from_stats', false)
+            ->sum('balance');
 
         $totalPlanned = $this->totalPlannedOfCurrentMonth();
 
-        $total = BigNumber::sum($result[0]->total_balance, $totalPlanned['total'])->toFloat();
+        $total = BigNumber::sum($total, $totalPlanned['total'])->toFloat();
         return [
             'total' => $total
         ];
@@ -150,48 +126,43 @@ abstract class StatsRepository implements StatsRepositoryInterface
     /**
      * Calculates the total with planned value for the current month.
      *
-     * @return stdClass The total value with planned for the current month.
+     * @return \stdClass The total value with planned for the current month.
      */
-    public function totalWithPlannedOfCurrentMonth()
+    public function totalWithPlannedOfCurrentMonth(): \stdClass
     {
-        $wsId = $this->wsId;
+        $wallets = Wallet::where('workspace_id', $this->wsId)
+            ->whereNull('deleted_at')
+            ->where('archived', false)
+            ->where('exclude_from_stats', false)
+            ->get();
 
-        $query = "
-        SELECT 
-        COALESCE(SUM(CASE WHEN a.installement = true  and a.balance < 0 THEN a.installement_value END), 0) AS installement_balance,
-        COALESCE(SUM(CASE WHEN a.installement = false THEN a.balance END), 0) AS balance_without_installement,
-        COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
-        FROM 
-            wallets AS a
-        LEFT JOIN (
-            SELECT 
-                account_id,
-                planned,
-                SUM(amount) AS amount
-            FROM 
-                entries
-            WHERE 
-                planned = true
-                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
-                AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
+        $installementBalance = 0.0;
+        $balanceWithoutInstallement = 0.0;
 
-                AND confirmed = true
-                AND deleted_at IS NULL
-                AND exclude_from_stats = false
-                AND workspace_id = ?
-            GROUP BY 
-                account_id, planned
-        ) AS e ON a.id = e.account_id
-        WHERE 
-            a.deleted_at IS NULL
-            AND a.archived = false
-            AND a.exclude_from_stats = false
-            AND a.workspace_id = ?;
-        ";
+        foreach ($wallets as $wallet) {
+            if ($wallet->installement && $wallet->balance < 0) {
+                $installementBalance += (float) ($wallet->installement_value ?? 0);
+            } else {
+                $balanceWithoutInstallement += (float) $wallet->balance;
+            }
+        }
 
-        $result = DB::select($query, [$wsId, $wsId]);
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setMonth(now()->month)
+            ->setYear(now()->year)
+            ->setPlanned(true);
 
-        return $result[0];
+        $agregator = ElasticAggregator::create($filters)->totalAmount();
+        $results = SearchService::aggregate($agregator);
+        $plannedTotal = !empty($results) ? ($results[0]->aggregations()->total ?? 0.0) : 0.0;
+
+        $result = new \stdClass();
+        $result->installement_balance = $installementBalance;
+        $result->balance_without_installement = $balanceWithoutInstallement;
+        $result->planned_amount_total = $plannedTotal;
+
+        return $result;
     }
 
     /**
@@ -224,31 +195,21 @@ abstract class StatsRepository implements StatsRepositoryInterface
     /**
      * Returns the total planned of the current month.
      *
-     * @return int The total planned of the current month.
+     * @return array The total planned of the current month.
      */
-    public function totalPlannedOfCurrentMonth()
+    public function totalPlannedOfCurrentMonth(): array
     {
-        $wsId = $this->wsId;
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setMonth(now()->month)
+            ->setYear(now()->year)
+            ->setPlanned(true);
 
-        $query = "
-            SELECT 
-                COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
-            FROM 
-                entries AS e
-            WHERE 
-                e.planned = true
-                AND EXTRACT(MONTH FROM e.date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
-                AND EXTRACT(YEAR FROM e.date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
-                AND e.confirmed = true
-                AND e.deleted_at IS NULL
-                AND e.exclude_from_stats = false
-                AND e.workspace_id = ?;
-        ";
-
-        $result = DB::select($query, [$wsId]);
+        $agregator = ElasticAggregator::create($filters)->totalAmount();
+        $results = SearchService::aggregate($agregator);
 
         return [
-            'total' => $result[0]->planned_amount_total
+            'total' => !empty($results) ? ($results[0]->aggregations()->total ?? 0.0) : 0.0
         ];
     }
 
@@ -258,80 +219,56 @@ abstract class StatsRepository implements StatsRepositoryInterface
      * @param array $options An array of filters to apply.
      * @return array An array containing the statistics data.
      */
-    public function statsByFilters(array $options)
+    public function statsByFilters(array $options): array
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $addConditions = '';
-        $addJoins = '';
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate);
+
         if (!empty($options['categories'])) {
-            $addConditions .= " AND query.category_id IN ('" . implode("','", $options['categories']) . "')";
+            $filters->setCategories($options['categories']);
         }
 
         if (!empty($options['accounts'])) {
-            $addJoins .= " AND e.account_id IN ('" . implode("','", $options['accounts']) . "')";
+            $filters->setWalletIds($options['accounts']);
         }
 
         if (!empty($options['payment_methods'])) {
-            $addJoins .= " AND e.payment_type IN ('" . implode("','", $options['payment_methods']) . "')";
+            $filters->setPaymentType($options['payment_methods'][0]);
         }
 
         if (!empty($options['currencies'])) {
-            $addJoins .= " AND e.currency_id IN ('" . implode("','", $options['currencies']) . "')";
+            $filters->setCurrency($options['currencies'][0]);
         }
 
-        if(!empty($options['tags'])) {
-            $tags = $this->entriesFromTags($options['tags']);
-            $entries = array_map(function($entry) {
-                return $entry->id;
-            }, $tags);
-            $entries = implode(',', $entries);
-            $entries = str_replace(',,','',$entries); // Work Around fixme:
-            if(!empty($entries)) {
-                $addJoins .= " AND e.id in ($entries)";
-            }
+        if (!empty($options['tags'])) {
+            $filters->setTags($options['tags']);
         }
 
-        $query = "select * from (
-            SELECT 
-                c.uuid AS category_uuid,
-                cc.type AS category_type,
-                c.slug AS category_slug,
-                COALESCE(SUM(e.amount), 0) AS total,
-                c.id AS category_id
-            FROM 
-                sub_categories AS c
-            JOIN 
-                categories AS cc ON c.category_id = cc.id
-            LEFT JOIN 
-                entries AS e ON e.category_id = c.id
-                AND e.exclude_from_stats = false
-                AND e.deleted_at IS NULL
-                AND e.confirmed = true
-                AND e.planned = false
-                AND e.date_time >= :startDate
-                AND e.date_time < :endDate
-                AND e.workspace_id = :wsId
-                AND e.type IN ('expenses', 'incoming', 'debit')
-                $addJoins
-            GROUP BY 
-                cc.type, c.name, c.id, c.uuid, c.slug
-                ) as query
-            WHERE 
-                query.category_type in ('incoming','expenses', 'debit')
-                $addConditions
-            ORDER BY
-                query.category_type desc;";
+        $agregator = ElasticAggregator::create($filters)->groupByCategory();
+        $results = SearchService::aggregate($agregator);
 
-        $result = DB::select($query, [
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'wsId' => $wsId
-        ]);
+        if (empty($results)) {
+            return [];
+        }
 
-        return $result;
+        $entries = [];
+        foreach ($results as $value) {
+            $aggregation = $value->aggregations();
+            $entry = new \stdClass();
+            $entry->total = $aggregation->total ?? 0.0;
+            $entry->category_slug = $aggregation->category_slug ?? null;
+            $entry->category_id = $aggregation->category_id ?? null;
+            $entry->category_uuid = null;
+            $entry->category_type = null;
+            $entries[] = $entry;
+        }
+
+        return $entries;
     }
 
     /**
@@ -342,72 +279,52 @@ abstract class StatsRepository implements StatsRepositoryInterface
      */
     protected function entriesFromTags(array $tags): array
     {
-        $query = "select entries.* from entries
-        right join entry_labels on entries.id = entry_labels.entry_id
-        right join labels on entry_labels.labels_id = labels.id
-        where labels.id in (".implode(',', $tags).") AND entries.deleted_at IS NULL;";
-        $results = DB::select($query);
-
-        if(empty($results)) {
+        if (empty($tags)) {
             return [];
         }
 
-        return $results;
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setTags($tags);
+
+        return SearchService::search($filters);
     }
 
     /**
      * Retrieves statistics by category slug.
      *
      * @param string $categorySlug The slug of the category.
-     * @param bool $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
-     * @return stdClass
+     * @param bool $isPlanned (optional) Whether the statistics are planned or not. Default is false.
+     * @return \stdClass
      */
-    public function statsByCategories(string $categorySlug, bool $isPlanned = false): stdClass
+    public function statsByCategories(string $categorySlug, bool $isPlanned = false): \stdClass
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
-        $andPlanned = '';
-        if($isPlanned) {
-            $andPlanned = "AND e.planned = true";
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate);
+
+        if ($isPlanned) {
+            $filters->setPlanned(true);
         }
 
-        $query = "
-            SELECT 
-                c.uuid AS category_uuid,
-                cc.type AS category_type,
-                c.slug AS category_slug,
-                COALESCE(SUM(e.amount), 0) AS total,
-                c.id AS category_id
-            FROM 
-                sub_categories AS c
-            JOIN 
-                categories AS cc ON c.category_id = cc.id
-            LEFT JOIN 
-                entries AS e ON e.category_id = c.id
-                AND e.exclude_from_stats = false
-                AND e.deleted_at IS NULL
-                AND e.confirmed = true
-                $andPlanned
-                AND e.date_time >= :startDate
-                AND e.date_time < :endDate
-                AND e.workspace_id = :wsId
-                AND e.type IN ('expenses', 'incoming')
-            WHERE 
-                c.slug = :categorySlug
-            GROUP BY 
-                cc.type, c.name, c.id, c.uuid, c.slug
-            ORDER BY
-                cc.type desc;";
+        $agregator = ElasticAggregator::create($filters)->groupByCategory();
+        $results = SearchService::aggregate($agregator);
 
-        $result = DB::select($query, [
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'wsId' => $wsId,
-            'categorySlug' => $categorySlug
-        ]);
+        $matched = array_filter($results, fn($r) => $r->aggregations()->category_slug === $categorySlug);
+        $first = !empty($matched) ? array_values($matched)[0]->aggregations() : null;
 
-        return $result[0];
+        $result = new \stdClass();
+        $result->category_uuid = null;
+        $result->category_type = null;
+        $result->category_slug = $categorySlug;
+        $result->total = $first->total ?? 0.0;
+        $result->category_id = $first->category_id ?? null;
+
+        return $result;
     }
 
     /**
@@ -417,61 +334,38 @@ abstract class StatsRepository implements StatsRepositoryInterface
      */
     public function loanOfCreditCards()
     {
-        $wsId = $this->wsId;
-
         $walletsType = [EntityWallet::creditCard->value, EntityWallet::creditCardRevolving->value];
 
-        $query = "
-            SELECT 
-                a.invoice_date,
-                a.installement_value,
-                a.balance
-            FROM 
-                wallets AS a
-            WHERE 
-                a.deleted_at IS NULL
-                AND a.exclude_from_stats = false
-                AND a.archived = false
-                AND ( 
-                    a.type = '".$walletsType[0]."'
-                    OR a.type = '".$walletsType[1]."' 
-                )
-                AND a.balance < 0
-                AND a.workspace_id = $wsId;
-        ";
-
-        $result = DB::select($query);
-
-        return $result;
+        return Wallet::where('workspace_id', $this->wsId)
+            ->whereNull('deleted_at')
+            ->where('exclude_from_stats', false)
+            ->where('archived', false)
+            ->whereIn('type', $walletsType)
+            ->where('balance', '<', 0)
+            ->get(['invoice_date', 'installement_value', 'balance']);
     }
 
     /**
      * Retrieves the planned entries from the stats repository.
      *
-     * @return stdClass
+     * @return \stdClass
      */
-    public function plannedExpenses(): stdClass {
-        $wsId = $this->wsId;
+    public function plannedExpenses(): \stdClass
+    {
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setMonth(now()->month)
+            ->setYear(now()->year)
+            ->setPlanned(true)
+            ->setType(Entry::expenses->value);
 
-        $query = "
-            SELECT 
-                COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS total
-            FROM 
-                entries AS e
-            WHERE 
-                e.planned = true
-                AND EXTRACT(MONTH FROM e.date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
-                AND EXTRACT(YEAR FROM e.date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
-                AND e.confirmed = true
-                AND e.deleted_at IS NULL
-                AND e.exclude_from_stats = false
-                AND e.type IN ('expenses')
-                AND e.workspace_id = $wsId;
-        ";
+        $agregator = ElasticAggregator::create($filters)->totalAmount();
+        $results = SearchService::aggregate($agregator);
 
-        $result = DB::select($query);
+        $result = new \stdClass();
+        $result->total = !empty($results) ? ($results[0]->aggregations()->total ?? 0.0) : 0.0;
 
-        return $result[0];
+        return $result;
     }
 
     // ============ StatsRepositoryInterface Implementation ============

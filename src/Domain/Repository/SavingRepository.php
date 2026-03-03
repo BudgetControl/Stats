@@ -1,12 +1,15 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Repository;
 
+use Budgetcontrol\Library\Entity\Entry;
 use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
+use Budgetcontrol\Stats\Facade\SearchService;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
-use Illuminate\Database\Capsule\Manager as DB;
 
-class SavingRepository extends StatsRepository implements TransactionRepositoryInterface{
-    
+class SavingRepository extends StatsRepository implements TransactionRepositoryInterface {
+
     public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
     {
         return new self($wsId, $startDate, $endDate);
@@ -17,31 +20,61 @@ class SavingRepository extends StatsRepository implements TransactionRepositoryI
      *
      * @return array An array containing the statistics for savings.
      */
-    public function statsSevings() 
+    public function statsSevings(): array
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $query = "
-            SELECT COALESCE(SUM(e.amount), 0) AS total
-            FROM entries AS e
-            WHERE e.category_id = 62
-            AND e.exclude_from_stats = false
-            AND e.deleted_at is null
-            AND e.confirmed = true
-            AND e.amount < 0
-            AND e.planned = false
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND e.workspace_id = $wsId;
-        ";
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::saving->value)
+            ->setConfirmed(true)
+            ->setPlanned(false);
 
-        $result = DB::select($query);
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return ['total' => 0.0];
+        }
 
         return [
-            'total' => $result[0]->total
+            'total' => $results[0]->aggregations()->total ?? 0.0
         ];
     }
 
+    // ============ TransactionRepositoryInterface Implementation ============
+
+    public function getStats(): array
+    {
+        return $this->statsSevings();
+    }
+
+    public function getByCategory(?int $categoryId = null): array
+    {
+        return [];
+    }
+
+    public function getTransactionType(): string
+    {
+        return Entry::saving->value;
+    }
+
+    public function isPositiveAmount(): bool
+    {
+        return false;
+    }
+
+    public function getDefaultFilters(): ElasticFilter
+    {
+        return ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setType(Entry::saving->value)
+            ->setStartDate($this->startDate->toDateString())
+            ->setEndDate($this->endDate->toDateString());
+    }
 }

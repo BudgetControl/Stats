@@ -11,10 +11,6 @@ use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 
 interface StatsRepositoryInterface
 {
-    /**
-     * Setup repository with workspace and date range
-     */
-    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self;
 
     // ============ BASIC STATS ============
     
