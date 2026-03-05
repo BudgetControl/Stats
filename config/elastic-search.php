@@ -7,11 +7,13 @@ $elasticsearch = \BudgetcontrolLibs\ElasticSearch\Services\Clients\ElasticSearch
     env('ELASTICSEARCH_PASSWORD', 'changeme')
 );
 
-//check connection to elasticsearch
-$response = $elasticsearch->client()->ping();
-if(!$response->asBool()) {
-    throw new \Exception('Elasticsearch ping failed');
-}
+// Skip connectivity check and index setup in testing environment
+if (env('APP_ENV') !== 'testing') {
+    $response = $elasticsearch->client()->ping();
+    if(!$response->asBool()) {
+        throw new \Exception('Elasticsearch ping failed');
+    }
 
-// create index if not exists
-$elasticsearch->createIndexIfNotExists();
+    // create index if not exists
+    $elasticsearch->createIndexIfNotExists();
+}
