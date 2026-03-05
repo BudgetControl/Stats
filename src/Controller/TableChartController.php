@@ -6,7 +6,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableChart;
 use Budgetcontrol\Stats\Domain\Entity\TableChart\TableRowChart;
-use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Illuminate\Support\Carbon;
 
 class TableChartController extends ChartController
@@ -27,8 +26,8 @@ class TableChartController extends ChartController
             $startDatePrev = Carbon::rawParse($value['start'])->subDays($days);
             $endDatePrev = Carbon::rawParse($value['end'])->subDays($days);
 
-            $expensesResults = ExpensesRepository::setup($arg['wsid'], $startDate, $endDate)->expensesByCategories();
-            $expensesPrevResults = ExpensesRepository::setup($arg['wsid'], $startDatePrev, $endDatePrev)->expensesByCategories();
+            $expensesResults = $this->repository->setup($arg['wsid'], $startDate, $endDate)->expensesByCategories();
+            $expensesPrevResults = $this->repository->setup($arg['wsid'], $startDatePrev, $endDatePrev)->expensesByCategories();
 
             /** @var \Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory $expenses */
             foreach ($expensesResults as $expenses) {

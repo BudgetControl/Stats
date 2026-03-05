@@ -21,15 +21,50 @@ use Budgetcontrol\Stats\Services\StatsService;
 
 class StatsController extends Controller {
 
+    protected function createIncomingRepository(string $wsid, Carbon $startDate, Carbon $endDate): IncomingRepository
+    {
+        return new IncomingRepository($wsid, $startDate, $endDate);
+    }
+
+    protected function createExpensesRepository(string $wsid, Carbon $startDate, Carbon $endDate): ExpensesRepository
+    {
+        return new ExpensesRepository($wsid, $startDate, $endDate);
+    }
+
+    protected function createDebitRepository(string $wsid, Carbon $startDate, Carbon $endDate): DebitRepository
+    {
+        return new DebitRepository($wsid, $startDate, $endDate);
+    }
+
+    protected function createStatsRepository(string $wsid, Carbon $startDate, Carbon $endDate): StatsRepository
+    {
+        return new StatsRepository($wsid, $startDate, $endDate);
+    }
+
+    protected function createSavingRepository(string $wsid, Carbon $startDate, Carbon $endDate): SavingRepository
+    {
+        return new SavingRepository($wsid, $startDate, $endDate);
+    }
+
+    protected function createPlannedEntryRepository(string $wsid, Carbon $startDate, Carbon $endDate): PlannedEntryRepository
+    {
+        return new PlannedEntryRepository($wsid, $startDate, $endDate);
+    }
+
+    protected function createStatsService(string $wsid, Carbon $startDate, Carbon $endDate): StatsService
+    {
+        return new StatsService($wsid, $startDate, $endDate);
+    }
+
     public function incomingOfCurrentMonth(Request $request, Response $response, $arg) {
         
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new IncomingRepository($arg['wsid'],$startDate,$endDate);
+        $repository = $this->createIncomingRepository($arg['wsid'], $startDate, $endDate);
         $currentAmount = $repository->statsIncoming()['total'];
 
-        $repository = new IncomingRepository($arg['wsid'],$startDate->modify("-1 month"),$endDate->modify("-1 month"));
+        $repository = $this->createIncomingRepository($arg['wsid'], $startDate->modify("-1 month"), $endDate->modify("-1 month"));
         $previusAMount = $repository->statsIncoming()['total'];
 
         return response([
@@ -44,10 +79,10 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new ExpensesRepository($arg['wsid'],$startDate,$endDate);
+        $repository = $this->createExpensesRepository($arg['wsid'], $startDate, $endDate);
         $currentAmount = $repository->statsExpenses()['total'];
 
-        $repository = new ExpensesRepository($arg['wsid'],$startDate->modify("-1 month"),$endDate->modify("-1 month"));
+        $repository = $this->createExpensesRepository($arg['wsid'], $startDate->modify("-1 month"), $endDate->modify("-1 month"));
         $previusAMount = $repository->statsExpenses()['total'];
 
         return response([
@@ -63,10 +98,10 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new DebitRepository($arg['wsid'],$startDate,$endDate);
+        $repository = $this->createDebitRepository($arg['wsid'], $startDate, $endDate);
         $currentAmount = $repository->statsDebits()['total'];
 
-        $repository = new DebitRepository($arg['wsid'],$startDate->modify("-1 month"),$endDate->modify("-1 month"));
+        $repository = $this->createDebitRepository($arg['wsid'], $startDate->modify("-1 month"), $endDate->modify("-1 month"));
         $previusAMount = $repository->statsDebits()['total'];
 
         return response([
@@ -82,7 +117,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now();
         $endDate = Carbon::now();
 
-        $repository = new DebitRepository($arg['wsid'],$startDate,$endDate);
+        $repository = $this->createDebitRepository($arg['wsid'], $startDate, $endDate);
         $currentAmount = $repository->totalNegativeStatsDebits()['total'];
 
         return response([
@@ -95,7 +130,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now();
         $endDate = Carbon::now();
 
-        $repository = new DebitRepository($arg['wsid'],$startDate,$endDate);
+        $repository = $this->createDebitRepository($arg['wsid'], $startDate, $endDate);
         $currentAmount = $repository->totalPositiveStatsDebits()['total'];
 
         return response([
@@ -109,7 +144,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new StatsRepository(
+        $repository = $this->createStatsRepository(
             $arg['wsid'],
             $startDate,
             $endDate
@@ -125,7 +160,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new StatsRepository(
+        $repository = $this->createStatsRepository(
             $arg['wsid'],
             $startDate,
             $endDate
@@ -138,7 +173,7 @@ class StatsController extends Controller {
 
     public function health(Request $request, Response $response, $arg) {
 
-        $repository = new StatsRepository(
+        $repository = $this->createStatsRepository(
             $arg['wsid'],
             Carbon::now()->firstOfMonth(),
             Carbon::now()->lastOfMonth()
@@ -154,7 +189,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $service = new StatsService(
+        $service = $this->createStatsService(
             $arg['wsid'],
             $startDate,
             $endDate
@@ -181,7 +216,7 @@ class StatsController extends Controller {
             'currencies' => $body['currencies'] ?? null,
         ];
 
-        $entriesRepository = new StatsRepository($arg['wsid'], $startDate, $endDate);
+        $entriesRepository = $this->createStatsRepository($arg['wsid'], $startDate, $endDate);
         $entries = $entriesRepository->statsByFilters($options);
 
         $tableChart = new TableChart();
@@ -208,7 +243,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfYear();
         $endDate = Carbon::now()->lastOfYear();
 
-        $repository = new ExpensesRepository($arg['wsid'],$startDate,$endDate);
+        $repository = $this->createExpensesRepository($arg['wsid'], $startDate, $endDate);
         $currentAmount = round($repository->statsExpenses()['total'] / $months);
 
         return response([
@@ -223,7 +258,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfYear();
         $endDate = Carbon::now()->lastOfYear();
 
-        $repository = new IncomingRepository($arg['wsid'],$startDate,$endDate);
+        $repository = $this->createIncomingRepository($arg['wsid'], $startDate, $endDate);
         $currentAmount = round($repository->statsIncoming()['total'] / $months);
 
         return response([
@@ -238,7 +273,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfYear();
         $endDate = Carbon::now()->lastOfYear();
 
-        $repository = new SavingRepository(
+        $repository = $this->createSavingRepository(
             $arg['wsid'],
             $startDate,
             $endDate
@@ -266,14 +301,12 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new PlannedEntryRepository(
+        $repository = $this->createPlannedEntryRepository(
             $arg['wsid'],
             $startDate,
             $endDate
         );
         $result = $repository->getPlanedMonthlyExpenses();
-
-        //get load on creditCards
         $totalStats = new BcMathCalculator();
         $creditCards = $repository->loanOfCreditCards();
         $total = $result['total'];
@@ -302,7 +335,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new StatsRepository(
+        $repository = $this->createStatsRepository(
             $arg['wsid'],
             $startDate,
             $endDate
@@ -328,7 +361,7 @@ class StatsController extends Controller {
         $startDate = Carbon::now()->firstOfMonth();
         $endDate = Carbon::now()->lastOfMonth();
 
-        $repository = new PlannedEntryRepository(
+        $repository = $this->createPlannedEntryRepository(
             $arg['wsid'],
             $startDate,
             $endDate
