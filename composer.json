@@ -32,8 +32,8 @@
             "url": "https://github.com/BudgetControl/ApplicationTests.git"
         },
         "budgetcontrol/elasticsearch": {
-            "type": "path",
-            "url": "./ElasticSearchService"
+            "type": "vcs",
+            "url": "https://github.com/BudgetControl/ElasticSearchService.git"
         }
     },
     "require": {
