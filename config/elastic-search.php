@@ -8,7 +8,7 @@ $elasticsearch = \BudgetcontrolLibs\ElasticSearch\Services\Clients\ElasticSearch
 );
 
 // Skip connectivity check and index setup in testing environment
-if ($_ENV['APP_ENV'] !== 'testing') {
+if ($env('APP_ENV') !== 'testing') {
     $response = $elasticsearch->client()->ping();
     if(!$response->asBool()) {
         throw new \Exception('Elasticsearch ping failed');
