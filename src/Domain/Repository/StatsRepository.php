@@ -22,24 +22,19 @@ class StatsRepository implements StatsRepositoryInterface
     protected Carbon $startDate;
     protected Carbon $endDate;
 
-    /**
-     * StatsRepository constructor.
-     *
-     * @param string $wsId The ID of the workspace.
-     * @param Carbon $startDate The start date for the stats.
-     * @param Carbon $endDate The end date for the stats.
-     */
-    public function __construct(string $wsId, Carbon $startDate, Carbon $endDate)
+    public function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
     {
         $wsid = Workspace::where('uuid', $wsId)->first()->id;
         $wsid = 2;
-        if (is_null($wsid)) { 
+        if (is_null($wsid)) {
             throw new NotFoundResourceException('Workspace not found', 404);
         }
 
         $this->wsId = $wsid;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
+
+        return $this;
     }
 
     /**
@@ -55,7 +50,7 @@ class StatsRepository implements StatsRepositoryInterface
 
         $filters = ElasticFilter::create()
             ->setWorkspaceId($wsId)
-            ->setDateRange( $startDate, $endDate)
+            ->setDateRange($startDate, $endDate)
             ->setType(Entry::expenses->value);
 
         $agregator = ElasticAggregator::create($filters)
@@ -71,7 +66,7 @@ class StatsRepository implements StatsRepositoryInterface
      *
      * @return array The total value.
      */
-    public function total(): array 
+    public function total(): array
     {
         $total = Wallet::where('workspace_id', $this->wsId)
             ->where('installement', false)
@@ -98,7 +93,7 @@ class StatsRepository implements StatsRepositoryInterface
             ->where('deleted_at', null)
             ->where('archived', false)
             ->get();
-        
+
         return $wallets->toArray();
     }
 
@@ -190,7 +185,7 @@ class StatsRepository implements StatsRepositoryInterface
 
         return $wallets;
     }
-    
+
 
     /**
      * Returns the total planned of the current month.
@@ -368,22 +363,116 @@ class StatsRepository implements StatsRepositoryInterface
         return $result;
     }
 
+
+    /**
+     * Retrieves statistics for savings.
+     *
+     * @return array An array containing the statistics for savings.
+     */
+    public function statsSevings(): array
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::saving->value)
+            ->setConfirmed(true)
+            ->setPlanned(false);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return ['total' => 0.0];
+        }
+
+        return [
+            'total' => $results[0]->aggregations()->total ?? 0.0
+        ];
+    }
+
     // ============ StatsRepositoryInterface Implementation ============
     // Note: Many methods are implemented in child classes or need to be implemented
 
     public function statsExpenses(): array
     {
-        throw new \BadMethodCallException('statsExpenses should be implemented in ExpensesRepository');
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::expenses->value);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return [];
+        }
+
+        return [
+            'total' => $results[0]->aggregations()->total ?? 0.0
+        ];
     }
 
     public function statsIncoming(): array
     {
-        throw new \BadMethodCallException('statsIncoming should be implemented in IncomingRepository');
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(type: Entry::expenses->value);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        return [
+            'total' => $results->total_amount ?? 0.0
+        ];
     }
 
+/**
+     * Retrieves statistics for debits.
+     *
+     * @return array An array containing the statistics for debits.
+     */
     public function statsDebits(): array
     {
-        throw new \BadMethodCallException('statsDebits should be implemented in DebitRepository');
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::debit->value);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return ['total' => 0.0];
+        }
+
+        return [
+            'total' => $results[0]->aggregations()->total ?? 0.0
+        ];
     }
 
     public function statsSavings(): array
@@ -805,4 +894,15 @@ class StatsRepository implements StatsRepositoryInterface
         //TODO: Implement positive amount check
         throw new \BadMethodCallException('isPositiveAmount method not yet implemented');
     }
+
+    public function expensesByLabels(): array
+    {
+        throw new \BadMethodCallException('expensesByLabels should be implemented in ExpensesRepository');
+    }
+    public function expensesByCategories(): array
+    {
+        throw new \BadMethodCallException('expensesByCategories should be implemented in ExpensesRepository');
+    }
+
+
 }

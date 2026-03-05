@@ -10,39 +10,9 @@ use Budgetcontrol\Stats\Facade\SearchService;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
-use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 class ExpensesRepository extends StatsRepository implements TransactionRepositoryInterface
 {
-    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
-    {
-        return new self($wsId, $startDate, $endDate);
-    }
-
-    public function statsExpenses(): array
-    {
-        $wsId = $this->wsId;
-        $startDate = $this->startDate->toAtomString();
-        $endDate = $this->endDate->toAtomString();
-
-        $filters = ElasticFilter::create()
-            ->setWorkspaceId($wsId)
-            ->setDateRange( $startDate, $endDate)
-            ->setType(Entry::expenses->value);
-
-        $agregator = ElasticAggregator::create($filters)
-            ->totalAmount();
-
-        $results = SearchService::aggregate($agregator);
-
-        if(empty($results)) {
-            return [];
-        }
-
-        return [
-            'total' => $results[0]->aggregations()->total ?? 0.0
-        ];
-    }
 
     /**
      * Retrieves the expenses associated with a specific category.
@@ -119,7 +89,7 @@ class ExpensesRepository extends StatsRepository implements TransactionRepositor
         return $data;
     }
 
-    public function expensesByLabels(array $labels = [])
+    public function expensesByLabels(array $labels = []): array
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();

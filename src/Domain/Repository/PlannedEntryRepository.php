@@ -14,11 +14,6 @@ use Carbon\Carbon;
 
 class PlannedEntryRepository extends StatsRepository implements TransactionRepositoryInterface {
     
-    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
-    {
-        return new self($wsId, $startDate, $endDate);
-    }
-
     /**
      * Retrieves the planned expenses.
      *

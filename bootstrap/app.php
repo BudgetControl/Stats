@@ -3,7 +3,6 @@
 
 use \Illuminate\Support\Carbon as Date;
 use Illuminate\Support\Facades\Facade;
-use Monolog\Level;
 use Webit\Wrapper\BcMath\BcMathNumber;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -23,6 +22,9 @@ $capsule->addConnection($connections['mysql']);
 // Esegui il boot del Capsule
 $capsule->bootEloquent();
 $capsule->setAsGlobal();
+
+// Set up the dependency injection container
+require_once __DIR__ . '/../config/container-di.php';
 
 // Set up the logger
 require_once __DIR__ . '/../config/logger.php';

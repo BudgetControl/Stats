@@ -12,6 +12,8 @@ use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 interface StatsRepositoryInterface
 {
 
+    public function setup(string $wsId, Carbon $startDate, Carbon $endDate): self;
+
     // ============ BASIC STATS ============
     
     /**
@@ -40,6 +42,12 @@ interface StatsRepositoryInterface
      * Get debits statistics
      */
     public function statsDebits(): array;
+
+    /**
+     * Summary of statsSevings
+     * @return array
+     */
+    public function statsSevings(): array;
 
     /**
      * Get savings statistics
@@ -291,4 +299,9 @@ interface StatsRepositoryInterface
      * Get spending efficiency metrics
      */
     public function getSpendingEfficiencyMetrics(): array;
+
+    // ============ PLANNED ENTRIES ANALYSIS ============
+    public function expensesByLabels(): array;
+
+    public function expensesByCategories(): array;
 }

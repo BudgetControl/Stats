@@ -60,7 +60,8 @@
         "budgetcontrol/cryptable": "^v0.1",
         "budgetcontrol/library": "^v1.3",
         "bref/bref": "~2.4.1",
-        "budgetcontrol/elasticsearch": "dev-main"
+        "budgetcontrol/elasticsearch": "dev-main",
+        "php-di/php-di": "~7.1.1"
     },
     "require-dev": {
         "nikic/php-parser": "^5.0",

@@ -10,30 +10,6 @@ use Carbon\Carbon;
 
 class IncomingRepository extends StatsRepository implements TransactionRepositoryInterface {
     
-    public static function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
-    {
-        return new self($wsId, $startDate, $endDate);
-    }
-
-    public function statsIncoming(): array {
-        $wsId = $this->wsId;
-        $startDate = $this->startDate->toAtomString();
-        $endDate = $this->endDate->toAtomString();
-
-        $filters = ElasticFilter::create()
-            ->setWorkspaceId($wsId)
-            ->setDateRange( $startDate, $endDate)
-            ->setType(type: Entry::expenses->value);
-
-        $agregator = ElasticAggregator::create($filters)
-            ->totalAmount();
-
-        $results = SearchService::aggregate($agregator);
-
-        return [
-            'total' => $results->total_amount ?? 0.0
-        ];
-    }
 
     public function incomingByCategory(?int $categoryId = null): array
     {

@@ -2,9 +2,15 @@
 
 namespace Budgetcontrol\Stats\Controller;
 
-use BudgetcontrolLibs\ElasticSearch\Services\Transactions\SearchService;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
 
 class ChartController
 {
+    protected StatsRepositoryInterface $repository;
+
+    public function __construct(StatsRepositoryInterface $repository)
+    {
+        $this->repository = $repository;
+    }
 
 }
