@@ -14,8 +14,8 @@ use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
 use Budgetcontrol\Stats\Services\StatsService;
 use Budgetcontrol\Stats\Domain\ValueObjects\StatsCalculator;
 use Illuminate\Support\Carbon;
-use Slim\Psr7\Factory\ServerRequestFactory;
-use Slim\Psr7\Factory\ResponseFactory;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Testable subclass that allows repository injection via factory method override.
@@ -115,29 +115,19 @@ class StatsControllerTest extends TestCase
         $this->controller = new TestableStatsController();
     }
 
-    private function createRequest(string $method = 'GET', array $parsedBody = [], array $queryParams = []): \Psr\Http\Message\ServerRequestInterface
+    private function mock(?array $payload = null, string $method = 'getParsedBody'): array
     {
-        $factory = new ServerRequestFactory();
-        $request = $factory->createServerRequest($method, '/');
-
-        if (!empty($parsedBody)) {
-            $request = $request->withParsedBody($parsedBody);
+        $request = $this->createMock(ServerRequestInterface::class);
+        if ($payload) {
+            $request->method($method)->willReturn($payload);
         }
-        if (!empty($queryParams)) {
-            $request = $request->withQueryParams($queryParams);
-        }
-
-        return $request;
+        $response = $this->createMock(ResponseInterface::class);
+        return [$request, $response];
     }
 
-    private function createResponse(): \Psr\Http\Message\ResponseInterface
+    private function decodeResult(\Psr\Http\Message\ResponseInterface $result): array
     {
-        return (new ResponseFactory())->createResponse();
-    }
-
-    private function decodeResponse(\Psr\Http\Message\ResponseInterface $response): array
-    {
-        return json_decode((string) $response->getBody(), true);
+        return json_decode((string) $result->getBody(), true);
     }
 
     // ============ IncomingRepository Tests ============
@@ -149,14 +139,11 @@ class StatsControllerTest extends TestCase
         $repo->method('statsIncoming')->willReturn(['total' => 1500.0]);
         $this->controller->setIncomingRepository($repo);
 
-        $response = $this->controller->incomingOfCurrentMonth(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->incomingOfCurrentMonth($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertArrayHasKey('percentage', $body);
         $this->assertArrayHasKey('total_passed', $body);
@@ -171,14 +158,11 @@ class StatsControllerTest extends TestCase
         $repo->method('statsIncoming')->willReturn(['total' => 0.0]);
         $this->controller->setIncomingRepository($repo);
 
-        $response = $this->controller->incomingOfCurrentMonth(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->incomingOfCurrentMonth($request, $response, $this->defaultArg);
 
-        $body = $this->decodeResponse($response);
-        $this->assertSame(200, $response->getStatusCode());
+        $body = $this->decodeResult($result);
+        $this->assertEquals(200, $result->getStatusCode());
         $this->assertEquals(0, $body['total']);
     }
 
@@ -191,14 +175,11 @@ class StatsControllerTest extends TestCase
         $repo->method('statsExpenses')->willReturn(['total' => -500.0]);
         $this->controller->setExpensesRepository($repo);
 
-        $response = $this->controller->expensesOfCurrentMonth(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->expensesOfCurrentMonth($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertArrayHasKey('percentage', $body);
         $this->assertArrayHasKey('total_passed', $body);
@@ -211,14 +192,11 @@ class StatsControllerTest extends TestCase
         $repo->method('statsExpenses')->willReturn(['total' => -1200.0]);
         $this->controller->setExpensesRepository($repo);
 
-        $response = $this->controller->averageExpenses(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->averageExpenses($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertIsNumeric($body['total']);
     }
@@ -232,14 +210,11 @@ class StatsControllerTest extends TestCase
         $repo->method('statsDebits')->willReturn(['total' => 200.0]);
         $this->controller->setDebitRepository($repo);
 
-        $response = $this->controller->debitsOfCurrentMonth(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->debitsOfCurrentMonth($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertArrayHasKey('percentage', $body);
         $this->assertArrayHasKey('total_passed', $body);
@@ -252,14 +227,11 @@ class StatsControllerTest extends TestCase
         $repo->method('totalNegativeStatsDebits')->willReturn(['total' => -300.0]);
         $this->controller->setDebitRepository($repo);
 
-        $response = $this->controller->totalNegativeDebits(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->totalNegativeDebits($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertIsNumeric($body['total']);
     }
@@ -271,14 +243,11 @@ class StatsControllerTest extends TestCase
         $repo->method('totalPositiveStatsDebits')->willReturn(['total' => 150.0]);
         $this->controller->setDebitRepository($repo);
 
-        $response = $this->controller->totalPositiveDebits(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->totalPositiveDebits($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertEquals(150.0, $body['total']);
     }
@@ -292,14 +261,11 @@ class StatsControllerTest extends TestCase
         $repo->method('total')->willReturn(['total' => 5000.0]);
         $this->controller->setStatsRepository($repo);
 
-        $response = $this->controller->totalOfCurrentMonth(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->totalOfCurrentMonth($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertEquals(5000.0, $body['total']);
     }
@@ -316,14 +282,11 @@ class StatsControllerTest extends TestCase
         $repo->method('wallets')->willReturn($walletsData);
         $this->controller->setStatsRepository($repo);
 
-        $response = $this->controller->wallets(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->wallets($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertIsArray($body);
         $this->assertCount(2, $body);
     }
@@ -335,14 +298,11 @@ class StatsControllerTest extends TestCase
         $repo->method('health')->willReturn(['total' => 4500.0]);
         $this->controller->setStatsRepository($repo);
 
-        $response = $this->controller->health(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->health($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertEquals(4500.0, $body['total']);
     }
@@ -359,21 +319,18 @@ class StatsControllerTest extends TestCase
         $repo->method('statsByFilters')->willReturn($statsResult);
         $this->controller->setStatsRepository($repo);
 
-        $body = [
+        $payload = [
             'date' => ['start' => '2024/01/01', 'end' => '2024/01/31'],
             'type' => 'expenses',
         ];
 
-        $response = $this->controller->entries(
-            $this->createRequest('POST', $body),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock($payload);
+        $result = $this->controller->entries($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $decoded = $this->decodeResponse($response);
-        $this->assertArrayHasKey('rows', $decoded);
-        $this->assertIsArray($decoded['rows']);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
+        $this->assertArrayHasKey('rows', $body);
+        $this->assertIsArray($body['rows']);
     }
 
     public function testTotalPlannedRemainingOfCurrentMonthReturnsStatsWithTotal(): void
@@ -386,14 +343,11 @@ class StatsControllerTest extends TestCase
         $repo->method('plannedExpenses')->willReturn($plannedResult);
         $this->controller->setStatsRepository($repo);
 
-        $response = $this->controller->totalPlannedRemainingOfCurrentMonth(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->totalPlannedRemainingOfCurrentMonth($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertEquals(350.0, $body['total']);
     }
@@ -407,14 +361,11 @@ class StatsControllerTest extends TestCase
         $repo->method('statsSevings')->willReturn(['total' => 600.0]);
         $this->controller->setSavingRepository($repo);
 
-        $response = $this->controller->averageSavings(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->averageSavings($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertIsNumeric($body['total']);
     }
@@ -428,14 +379,11 @@ class StatsControllerTest extends TestCase
         $repo->method('statsIncoming')->willReturn(['total' => 3000.0]);
         $this->controller->setIncomingRepository($repo);
 
-        $response = $this->controller->averageIncoming(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->averageIncoming($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertIsNumeric($body['total']);
     }
@@ -450,14 +398,11 @@ class StatsControllerTest extends TestCase
         $repo->method('loanOfCreditCards')->willReturn([]);
         $this->controller->setPlannedEntryRepository($repo);
 
-        $response = $this->controller->totalLoanInstallmentsOfCurrentMonth(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->totalLoanInstallmentsOfCurrentMonth($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertIsNumeric($body['total']);
     }
@@ -471,17 +416,13 @@ class StatsControllerTest extends TestCase
         $repo->method('getPlanedDailyExpenses')->willReturn(['total' => 5.0]);
         $this->controller->setPlannedEntryRepository($repo);
 
-        $response = $this->controller->totalPlannedMonthlyEntry(
-            $this->createRequest(),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock();
+        $result = $this->controller->totalPlannedMonthlyEntry($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('total', $body);
         $this->assertIsNumeric($body['total']);
-        // Total should include monthly + (weekly * weeks) + (daily * days)
         $this->assertGreaterThan(0.0, $body['total']);
     }
 }

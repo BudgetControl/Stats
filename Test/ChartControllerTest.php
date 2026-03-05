@@ -3,89 +3,68 @@
 namespace Budgetcontrol\Stats\Test;
 
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
 use Budgetcontrol\Stats\Controller\LineChartController;
 use Budgetcontrol\Stats\Controller\BarChartController;
 use Budgetcontrol\Stats\Controller\ApplePieChartController;
 use Budgetcontrol\Stats\Controller\TableChartController;
 use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory;
-use Slim\Psr7\Factory\ServerRequestFactory;
-use Slim\Psr7\Factory\ResponseFactory;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
-/**
- * Unit tests for Chart Controllers.
- * Verifies that repositories return statistics data and chart controllers produce valid responses.
- */
 class ChartControllerTest extends TestCase
 {
     private array $defaultArg = ['wsid' => 'test-workspace-uuid'];
 
-    private function createRequest(string $method = 'GET', array $queryParams = [], array $parsedBody = []): \Psr\Http\Message\ServerRequestInterface
+    private function mock(?array $payload = null, string $method = 'getQueryParams'): array
     {
-        $factory = new ServerRequestFactory();
-        $request = $factory->createServerRequest($method, '/');
-
-        if (!empty($queryParams)) {
-            $request = $request->withQueryParams($queryParams);
+        $request = $this->createMock(ServerRequestInterface::class);
+        if ($payload) {
+            $request->method($method)->willReturn($payload);
         }
-        if (!empty($parsedBody)) {
-            $request = $request->withParsedBody($parsedBody);
-        }
-
-        return $request;
+        $response = $this->createMock(ResponseInterface::class);
+        return [$request, $response];
     }
 
-    private function createResponse(): \Psr\Http\Message\ResponseInterface
+    private function repository(): StatsRepositoryInterface
     {
-        return (new ResponseFactory())->createResponse();
-    }
+        $mock = $this->getMockBuilder(StatsRepositoryInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
 
-    private function decodeResponse(\Psr\Http\Message\ResponseInterface $response): array
-    {
-        return json_decode((string) $response->getBody(), true);
-    }
-
-    /**
-     * Creates a mock of StatsRepositoryInterface where setup() returns itself.
-     *
-     * @return StatsRepositoryInterface&MockObject
-     */
-    private function createRepoMock(): StatsRepositoryInterface
-    {
-        /** @var StatsRepositoryInterface&MockObject $mock */
-        $mock = $this->createMock(StatsRepositoryInterface::class);
         $mock->method('setup')->willReturnSelf();
+        $mock->method('statsIncoming')->willReturn(['total' => 0.0]);
+        $mock->method('statsExpenses')->willReturn(['total' => 0.0]);
+        $mock->method('statsDebits')->willReturn(['total' => 0.0]);
+        $mock->method('statsSevings')->willReturn(['total' => 0.0]);
+        $mock->method('expensesByCategories')->willReturn([]);
+        $mock->method('expensesByLabels')->willReturn([]);
+
         return $mock;
+    }
+
+    private function decodeResult(\Psr\Http\Message\ResponseInterface $result): array
+    {
+        return json_decode((string) $result->getBody(), true);
     }
 
     // ============ LineChartController Tests ============
 
     public function testLineChartIncomingExpensesByDateReturnsStatsWithSeries(): void
     {
-        $repo = $this->createRepoMock();
-        $repo->method('statsIncoming')->willReturn(['total' => 1000.0]);
-        $repo->method('statsExpenses')->willReturn(['total' => -500.0]);
-        $repo->method('statsDebits')->willReturn(['total' => 200.0]);
-        $repo->method('statsSevings')->willReturn(['total' => 300.0]);
-
-        $controller = new LineChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
                 ['start' => '2024/02/01', 'end' => '2024/02/28'],
             ],
         ];
 
-        $response = $controller->incomingExpensesByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock($payload);
+        $controller = new LineChartController($this->repository());
+        $result = $controller->incomingExpensesByDate($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('series', $body);
         $this->assertIsArray($body['series']);
         $this->assertNotEmpty($body['series']);
@@ -93,162 +72,114 @@ class ChartControllerTest extends TestCase
 
     public function testLineChartReturnsAllFourSeries(): void
     {
-        $repo = $this->createRepoMock();
-        $repo->method('statsIncoming')->willReturn(['total' => 800.0]);
-        $repo->method('statsExpenses')->willReturn(['total' => -400.0]);
-        $repo->method('statsDebits')->willReturn(['total' => 100.0]);
-        $repo->method('statsSevings')->willReturn(['total' => 50.0]);
-
-        $controller = new LineChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/03/01', 'end' => '2024/03/31'],
             ],
         ];
 
-        $response = $controller->incomingExpensesByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock($payload);
+        $controller = new LineChartController($this->repository());
+        $result = $controller->incomingExpensesByDate($request, $response, $this->defaultArg);
 
-        $body = $this->decodeResponse($response);
-        // Should have 4 series: incoming, expenses, debit, savings
+        $body = $this->decodeResult($result);
         $this->assertCount(4, $body['series']);
     }
 
     public function testLineChartWithZeroTotalsReturnsSeries(): void
     {
-        $repo = $this->createRepoMock();
-        $repo->method('statsIncoming')->willReturn(['total' => 0.0]);
-        $repo->method('statsExpenses')->willReturn(['total' => 0.0]);
-        $repo->method('statsDebits')->willReturn(['total' => 0.0]);
-        $repo->method('statsSevings')->willReturn(['total' => 0.0]);
-
-        $controller = new LineChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
             ],
         ];
 
-        $response = $controller->incomingExpensesByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock($payload);
+        $controller = new LineChartController($this->repository());
+        $result = $controller->incomingExpensesByDate($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('series', $body);
     }
 
     // ============ BarChartController Tests ============
 
-    public function testBarChartExpensesCategoryByDateWithEmptyResultsReturnsEmptySeries(): void
+    public function testBarChartExpensesCategoryByDateReturnsEmptySeries(): void
     {
-        $repo = $this->createRepoMock();
-        $repo->method('expensesByCategories')->willReturn([]);
-
-        $controller = new BarChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
             ],
         ];
 
-        $response = $controller->expensesCategoryByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock($payload);
+        $controller = new BarChartController($this->repository());
+        $result = $controller->expensesCategoryByDate($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('bar', $body);
         $this->assertIsArray($body['bar']);
         $this->assertEmpty($body['bar']);
     }
 
-    public function testBarChartExpensesLabelsByDateWithEmptyResultsReturnsEmptySeries(): void
+    public function testBarChartExpensesLabelsByDateReturnsEmptySeries(): void
     {
-        $repo = $this->createRepoMock();
-        $repo->method('expensesByLabels')->willReturn([]);
-
-        $controller = new BarChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
             ],
         ];
 
-        $response = $controller->expensesLabelsByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock($payload);
+        $controller = new BarChartController($this->repository());
+        $result = $controller->expensesLabelsByDate($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('bar', $body);
         $this->assertIsArray($body['bar']);
         $this->assertEmpty($body['bar']);
     }
 
-    public function testBarChartExpensesCategoryByDateCallsRepositoryForEachDateRange(): void
+    public function testBarChartExpensesCategoryCallsRepositoryForEachDateRange(): void
     {
-        $repo = $this->createRepoMock();
-        $repo->expects($this->exactly(2))
-            ->method('expensesByCategories')
-            ->willReturn([]);
-
-        $controller = new BarChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
                 ['start' => '2024/02/01', 'end' => '2024/02/28'],
             ],
         ];
 
-        $controller->expensesCategoryByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        $repo = $this->repository();
+        $repo->expects($this->exactly(2))->method('expensesByCategories')->willReturn([]);
+
+        list($request, $response) = $this->mock($payload);
+        $controller = new BarChartController($repo);
+        $controller->expensesCategoryByDate($request, $response, $this->defaultArg);
     }
 
     // ============ ApplePieChartController Tests ============
 
-    public function testApplePieChartExpensesLabelsByDateWithEmptyResultsReturnsEmptyFields(): void
+    public function testApplePieChartExpensesLabelsByDateReturnsArray(): void
     {
-        $repo = $this->createRepoMock();
-        $repo->method('expensesByLabels')->willReturn([]);
-
-        $controller = new ApplePieChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
             ],
         ];
 
-        $response = $controller->expensesLabelsByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock($payload);
+        $controller = new ApplePieChartController($this->repository());
+        $result = $controller->expensesLabelsByDate($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertIsArray($body);
     }
 
-    public function testApplePieChartFiltersByLabelParam(): void
+    public function testApplePieChartWithLabelDataReturnsResult(): void
     {
         $labelObj = new \stdClass();
         $labelObj->label_name = 'food';
@@ -256,101 +187,87 @@ class ChartControllerTest extends TestCase
         $labelObj->name = 'Food';
         $labelObj->id = 1;
 
-        $repo = $this->createRepoMock();
-        $repo->method('expensesByLabels')->willReturn([$labelObj]);
-
-        $controller = new ApplePieChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
             ],
             'labels' => ['food'],
         ];
 
-        $response = $controller->expensesLabelsByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        $repo = $this->getMockBuilder(StatsRepositoryInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repo->method('setup')->willReturnSelf();
+        $repo->method('expensesByLabels')->willReturn([$labelObj]);
 
-        $this->assertSame(200, $response->getStatusCode());
+        list($request, $response) = $this->mock($payload);
+        $controller = new ApplePieChartController($repo);
+        $result = $controller->expensesLabelsByDate($request, $response, $this->defaultArg);
+
+        $this->assertEquals(200, $result->getStatusCode());
     }
 
     // ============ TableChartController Tests ============
 
-    public function testTableChartExpensesCategoryByDateWithEmptyResultsReturnsEmptySeries(): void
+    public function testTableChartExpensesCategoryByDateReturnsEmptyRows(): void
     {
-        $repo = $this->createRepoMock();
-        $repo->method('expensesByCategories')->willReturn([]);
-
-        $controller = new TableChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
             ],
         ];
 
-        $response = $controller->expensesCategoryByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        list($request, $response) = $this->mock($payload);
+        $controller = new TableChartController($this->repository());
+        $result = $controller->expensesCategoryByDate($request, $response, $this->defaultArg);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('rows', $body);
         $this->assertIsArray($body['rows']);
         $this->assertEmpty($body['rows']);
     }
 
-    public function testTableChartExpensesCategoryWithDataReturnsSeriesRows(): void
+    public function testTableChartExpensesCategoryWithDataReturnsRows(): void
     {
         $category = new ExpensesCategory(-200.0, 'food', 1, 'Food');
 
-        $repo = $this->createRepoMock();
-        $repo->method('expensesByCategories')->willReturn(['food' => $category]);
-
-        $controller = new TableChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
             ],
         ];
 
-        $response = $controller->expensesCategoryByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        $repo = $this->getMockBuilder(StatsRepositoryInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $repo->method('setup')->willReturnSelf();
+        $repo->method('expensesByCategories')->willReturn(['food' => $category]);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $body = $this->decodeResponse($response);
+        list($request, $response) = $this->mock($payload);
+        $controller = new TableChartController($repo);
+        $result = $controller->expensesCategoryByDate($request, $response, $this->defaultArg);
+
+        $this->assertEquals(200, $result->getStatusCode());
+        $body = $this->decodeResult($result);
         $this->assertArrayHasKey('rows', $body);
         $this->assertNotEmpty($body['rows']);
     }
 
     public function testTableChartCallsRepositorySetupForCurrentAndPreviousPeriod(): void
     {
-        $repo = $this->createRepoMock();
-        // setup() is called twice per date range (current + previous period)
-        $repo->expects($this->exactly(2))->method('setup')->willReturnSelf();
-        $repo->method('expensesByCategories')->willReturn([]);
-
-        $controller = new TableChartController($repo);
-
-        $queryParams = [
+        $payload = [
             'date_time' => [
                 ['start' => '2024/01/01', 'end' => '2024/01/31'],
             ],
         ];
 
-        $controller->expensesCategoryByDate(
-            $this->createRequest('GET', $queryParams),
-            $this->createResponse(),
-            $this->defaultArg
-        );
+        $repo = $this->repository();
+        $repo->expects($this->exactly(2))->method('setup')->willReturnSelf();
+        $repo->method('expensesByCategories')->willReturn([]);
+
+        list($request, $response) = $this->mock($payload);
+        $controller = new TableChartController($repo);
+        $controller->expensesCategoryByDate($request, $response, $this->defaultArg);
     }
 }
