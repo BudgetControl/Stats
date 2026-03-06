@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface StatsRepositoryInterface extends DebitRepoInterface, IncomingRepoInterface, SavingRepoInterface, PlannedEntryRepoInterface, ExpensesRepoInterface
 {
+    public function setup(string $wsId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate): self;
 
     /**
      * Retrieves the total stats.

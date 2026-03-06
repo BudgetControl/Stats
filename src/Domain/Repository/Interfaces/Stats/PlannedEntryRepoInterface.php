@@ -6,6 +6,8 @@ namespace Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 
 interface PlannedEntryRepoInterface {
+
+    public function setup(string $wsId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate): self;
     
     /**
      * Retrieves the planned expenses.

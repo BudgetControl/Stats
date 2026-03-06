@@ -7,6 +7,7 @@ use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 
 interface ExpensesRepoInterface
 {
+    public function setup(string $wsId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate): self;
 
     /**
      * Retrieves the expenses associated with a specific category.

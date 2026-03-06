@@ -2,8 +2,11 @@
 namespace Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats;
 
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
+use Carbon\Carbon;
 
 interface DebitRepoInterface {
+
+    public function setup(string $wsId, Carbon $startDate, Carbon $endDate): self;
 
     /**
      * Calculate the total amount of negative debits.
