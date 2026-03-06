@@ -3,6 +3,10 @@
     "description": "defines the dependencies required for a PHP microservice stats in a Budget application",
     "type": "none",
     "repositories": {
+        "source": {
+            "type": "vcs",
+            "url": "https://github.com/mlabfactory/phpunit-self-api-integration.git"
+        },
         "mlab/math-percentage": {
             "type": "github",
             "url": "https://github.com/mlabfactory/math-percentage.git"
@@ -14,6 +18,22 @@
         "budgetcontrol/library" : {
             "type":"vcs",
             "url":"https://github.com/BudgetControl/Library.git"
+        },
+        "budgetcontrol/seeds" : {
+            "type":"vcs",
+            "url":"git@github.com:BudgetControl/SeedsTestLibs.git"
+        },
+        "budgetcontrol/schema-registry-service" : {
+            "type":"vcs",
+            "url":"git@github.com:BudgetControl/Schema-Registry-Service.git"
+        },
+        "budgetcontrol/application-tests": {
+            "type": "vcs",
+            "url": "https://github.com/BudgetControl/ApplicationTests.git"
+        },
+        "budgetcontrol/elasticsearch": {
+            "type": "vcs",
+            "url": "https://github.com/BudgetControl/ElasticSearchService.git"
         }
     },
     "require": {
@@ -39,12 +59,14 @@
         "mlab/math-percentage": "v1.0.*",
         "budgetcontrol/cryptable": "^v0.1",
         "budgetcontrol/library": "^v1.3",
-        "bref/bref": "~2.4.1"
+        "bref/bref": "~2.4.1",
+        "budgetcontrol/elasticsearch": "dev-main",
+        "php-di/php-di": "~7.1.1"
     },
     "require-dev": {
         "nikic/php-parser": "^5.0",
-        "phpunit/phpunit": "^11.0",
-        "fakerphp/faker": "^1.23"
+        "fakerphp/faker": "^1.23",
+        "budgetcontrol/application-tests": "~v1-beta"
     },
     "autoload": {
         "psr-4": {
@@ -60,5 +82,10 @@
             "email": "marco.defelice@mlabfactory.it"
         }
     ],
-    "minimum-stability": "stable"
+    "minimum-stability": "dev",
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
 }

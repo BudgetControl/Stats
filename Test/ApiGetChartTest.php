@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
-
-require_once 'app/User/Tests/AuthTest.php';
+use Budgetcontrol\Stats\Controller\ApplePieChartController;
+use Budgetcontrol\Stats\Controller\BarChartController;
+use Budgetcontrol\Stats\Controller\LineChartController;
+use Budgetcontrol\Stats\Controller\TableChartController;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class ApiGetChartTest extends TestCase
 {
@@ -57,54 +60,98 @@ class ApiGetChartTest extends TestCase
         $y = date('Y',time());
         $m = date('m',time());
 
-        $response = $this->get("/api/chart/line/incoming-expenses?date_time[0][start]=$y%2F$m%2F$m&date_time[0][end]=$y%2F$m%2F28&date_time[1][start]=$y%2F02%2F$m&date_time[1][end]=$y%2F02%2F28&date_time[2][start]=$y%2F03%2F$m&date_time[2][end]=$y%2F03%2F28&date_time[3][start]=$y%2F04%2F$m&date_time[3][end]=$y%2F04%2F28&date_time[4][start]=$y%2F05%2F$m&date_time[4][end]=$y%2F05%2F28&date_time[5][start]=$y%2F06%2F$m&date_time[5][end]=$y%2F06%2F28&date_time[6][start]=$y%2F07%2F$m&date_time[6][end]=$y%2F07%2F28&date_time[7][start]=$y%2F08%2F$m&date_time[7][end]=$y%2F08%2F28&date_time[8][start]=$y%2F09%2F$m&date_time[8][end]=$y%2F09%2F28&date_time[9][start]=$y%2F10%2F$m&date_time[9][end]=$y%2F10%2F28&date_time[10][start]=$y%2F11%2F$m&date_time[10][end]=$y%2F11%2F28&date_time[11][start]=$y%2F12%2F$m&date_time[11][end]=$y%2F12%2F28");
+        $payload = [
+            'date_time' => [
+                [
+                    'start' => "$y/$m/01",
+                    'end' => "$y/$m/20"
+                ]
+            ]
+        ];
 
-        $response->assertStatus(200);
+        list($request, $response) = $this->mock($payload);
+        $controller = new LineChartController($this->repository());
+        $result = $controller->incomingExpensesByDate($request, $response, ['wsid' => 1]);
+
+        $this->assertEquals(200, $result->getStatusCode());
         $response->assertJsonStructure(self::LINE);
 
     }
 
     public function test_table_expenses_category_data(): void
     {
-        $y = date('Y',time());
-        $m = date('m',time());
+        $payload = [
+            'date_time' => [
+                ['start' => date('Y') . '/01/01', 'end' => date('Y') . '/01/31']
+            ]
+        ];
 
-        $response = $this->get("/api/chart/table/expenses/category?date_time[0][start]=$y%2F06%2F$m&date_time[0][end]=$y%2F06%2F20");
+        list($request, $response) = $this->mock($payload, 'getQueryParams');
+        $controller = new TableChartController($this->repository());
+        $result = $controller->expensesCategoryByDate($request, $response, ['wsid' => 1]);
 
-        $response->assertStatus(200);
-        //$response->assertJsonStructure(self::TABLE);
-        //FIXME: only in gith hub doesn't works
+        $this->assertEquals(200, $result->getStatusCode());
     }
 
     public function test_bar_expenses_category_data(): void
     {
-        $y = date('Y',time());
-        $m = date('m',time());
+        $payload = [
+            'date_time' => [
+                ['start' => date('Y') . '/01/01', 'end' => date('Y') . '/01/31']
+            ]
+        ];
 
-        $response = $this->get("/api/chart/bar/expenses/category?date_time[0][start]=$y%2F06%2F$m&date_time[0][end]=$y%2F06%2F20");
+        list($request, $response) = $this->mock($payload, 'getQueryParams');
+        $controller = new BarChartController($this->repository());
+        $result = $controller->expensesCategoryByDate($request, $response, ['wsid' => 1]);
 
-        $response->assertStatus(200);
-        //$response->assertJsonStructure(self::BAR);
-        //FIXME: only in gith hub doesn't works
+        $this->assertEquals(200, $result->getStatusCode());
     }
 
     public function test_bar_expenses_label_data(): void
     {
-        $y = date('Y',time());
-        $m = date('m',time());
+        $payload = [
+            'date_time' => [
+                ['start' => date('Y') . '/01/01', 'end' => date('Y') . '/01/31']
+            ]
+        ];
 
-        $response = $this->get("/api/chart/bar/expenses/label?date_time[0][start]=$y%2F06%2F$m&date_time[0][end]=$y%2F06%2F20");
+        list($request, $response) = $this->mock($payload, 'getQueryParams');
+        $controller = new BarChartController($this->repository());
+        $result = $controller->expensesLabelsByDate($request, $response, ['wsid' => 1]);
 
-        $response->assertStatus(200);
-        //$response->assertJsonStructure(self::BAR);
-        //FIXME: only in gith hub doesn't works
+        $this->assertEquals(200, $result->getStatusCode());
     }
 
-    private function getAuthTokenHeader()
+    private function mock(?array $payload = null, string $method = 'getQueryParams'): array
     {
-        //first we nee to get a new token
-        $response = $this->post('/auth/authenticate', AuthTest::PAYLOAD);
-        $token = $response['token']['plainTextToken'];
-        return ['X-ACCESS-TOKEN' => $token];
+        $request = $this->createMock(ServerRequestInterface::class);
+        if($payload) {
+            $request->method($method)->willReturn($payload);
+        }
+
+        $response = $this->getMockBuilder(ResponseInterface::class)
+            ->addMethods(['assertJsonStructure'])
+            ->getMockForAbstractClass();
+
+        return [$request, $response];
+    }
+
+    private function repository(): StatsRepositoryInterface
+    {
+        $mock = $this->getMockBuilder(StatsRepositoryInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mock->method('setup')->willReturnSelf();
+        $mock->method('statsIncoming')->willReturn(['total' => 0.0]);
+        $mock->method('statsExpenses')->willReturn(['total' => 0.0]);
+        $mock->method('statsDebits')->willReturn(['total' => 0.0]);
+        $mock->method('statsSevings')->willReturn(['total' => 0.0]);
+        $mock->method('expensesByCategories')->willReturn([]);
+        $mock->method('expensesByLabels')->willReturn([]);
+
+        return $mock;
     }
 }
+

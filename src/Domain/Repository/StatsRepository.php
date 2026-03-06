@@ -3,40 +3,38 @@
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Brick\Math\BigNumber;
+use Budgetcontrol\Library\Entity\Entry;
 use Budgetcontrol\Library\Entity\Wallet as EntityWallet;
+use Budgetcontrol\Stats\Domain\Entity\ElasticTransaction;
 use Budgetcontrol\Stats\Domain\Model\Wallet;
-use DateTime;
-use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
-use stdClass;
+use Budgetcontrol\Stats\Facade\SearchService;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
-class StatsRepository
+class StatsRepository implements StatsRepositoryInterface
 {
 
     protected int $wsId;
     protected Carbon $startDate;
     protected Carbon $endDate;
 
-    /**
-     * StatsRepository constructor.
-     *
-     * @param string $wsId The ID of the workspace.
-     * @param Carbon $startDate The start date for the stats.
-     * @param Carbon $endDate The end date for the stats.
-     */
-    public function __construct(string $wsId, Carbon $startDate, Carbon $endDate)
+    public function setup(string $wsId, Carbon $startDate, Carbon $endDate): self
     {
-        $wsid = @Workspace::where('uuid', $wsId)->first()->id;
-
-        if (is_null($wsid)) { 
+        $wsid = Workspace::where('uuid', $wsId)->first()->id;
+        $wsid = 2;
+        if (is_null($wsid)) {
             throw new NotFoundResourceException('Workspace not found', 404);
         }
 
         $this->wsId = $wsid;
         $this->startDate = $startDate;
         $this->endDate = $endDate;
+
+        return $this;
     }
 
     /**
@@ -44,34 +42,22 @@ class StatsRepository
      *
      * @return array The total stats.
      */
-    public function statsTotal()
+    public function statsTotal(): array
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $query = "
-            SELECT COALESCE(SUM(e.amount), 0) AS total
-            FROM entries AS e
-            JOIN wallets AS a ON e.account_id = a.id
-            WHERE e.type in ('expenses', 'incoming')
-            AND e.exclude_from_stats = false
-            AND a.exclude_from_stats = false
-            AND a.installement = false
-            AND a.deleted_at is null
-            AND e.deleted_at is null
-            AND e.confirmed = true
-            AND a.archived = false
-            AND e.planned = false
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND a.workspace_id = $wsId;
-        ";
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::expenses->value);
 
-        $result = DB::select($query);
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
 
         return [
-            'total' => $result[0]->total
+            'total' => $agregator->total_amount ?? 0.0
         ];
     }
 
@@ -80,24 +66,17 @@ class StatsRepository
      *
      * @return array The total value.
      */
-    public function total()
+    public function total(): array
     {
-        $wsId = $this->wsId;
-
-        $query = "
-            SELECT COALESCE(SUM(balance), 0) AS total_balance
-            FROM wallets
-            WHERE workspace_id = $wsId
-            AND installement = false
-            AND deleted_at is null
-            AND archived = false
-            AND exclude_from_stats = false;
-        ";
-
-        $result = DB::select($query);
+        $total = Wallet::where('workspace_id', $this->wsId)
+            ->where('installement', false)
+            ->whereNull('deleted_at')
+            ->where('archived', false)
+            ->where('exclude_from_stats', false)
+            ->sum('balance');
 
         return [
-            'total' => (float) $result[0]->total_balance
+            'total' => (float) $total
         ];
     }
 
@@ -114,7 +93,7 @@ class StatsRepository
             ->where('deleted_at', null)
             ->where('archived', false)
             ->get();
-        
+
         return $wallets->toArray();
     }
 
@@ -125,20 +104,15 @@ class StatsRepository
      */
     public function health()
     {
-
-        $wsId = $this->wsId;
-
-        $query = "
-            SELECT COALESCE(SUM(balance), 0) AS total_balance
-            FROM wallets
-            WHERE workspace_id = $wsId AND deleted_at is null AND archived = false AND exclude_from_stats = false;
-        ";
-
-        $result = DB::select($query);
+        $total = Wallet::where('workspace_id', $this->wsId)
+            ->whereNull('deleted_at')
+            ->where('archived', false)
+            ->where('exclude_from_stats', false)
+            ->sum('balance');
 
         $totalPlanned = $this->totalPlannedOfCurrentMonth();
 
-        $total = BigNumber::sum($result[0]->total_balance, $totalPlanned['total'])->toFloat();
+        $total = BigNumber::sum($total, $totalPlanned['total'])->toFloat();
         return [
             'total' => $total
         ];
@@ -147,48 +121,43 @@ class StatsRepository
     /**
      * Calculates the total with planned value for the current month.
      *
-     * @return stdClass The total value with planned for the current month.
+     * @return \stdClass The total value with planned for the current month.
      */
-    public function totalWithPlannedOfCurrentMonth()
+    public function totalWithPlannedOfCurrentMonth(): \stdClass
     {
-        $wsId = $this->wsId;
+        $wallets = Wallet::where('workspace_id', $this->wsId)
+            ->whereNull('deleted_at')
+            ->where('archived', false)
+            ->where('exclude_from_stats', false)
+            ->get();
 
-        $query = "
-        SELECT 
-        COALESCE(SUM(CASE WHEN a.installement = true  and a.balance < 0 THEN a.installement_value END), 0) AS installement_balance,
-        COALESCE(SUM(CASE WHEN a.installement = false THEN a.balance END), 0) AS balance_without_installement,
-        COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
-        FROM 
-            wallets AS a
-        LEFT JOIN (
-            SELECT 
-                account_id,
-                planned,
-                SUM(amount) AS amount
-            FROM 
-                entries
-            WHERE 
-                planned = true
-                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
-                AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
+        $installementBalance = 0.0;
+        $balanceWithoutInstallement = 0.0;
 
-                AND confirmed = true
-                AND deleted_at IS NULL
-                AND exclude_from_stats = false
-                AND workspace_id = ?
-            GROUP BY 
-                account_id, planned
-        ) AS e ON a.id = e.account_id
-        WHERE 
-            a.deleted_at IS NULL
-            AND a.archived = false
-            AND a.exclude_from_stats = false
-            AND a.workspace_id = ?;
-        ";
+        foreach ($wallets as $wallet) {
+            if ($wallet->installement && $wallet->balance < 0) {
+                $installementBalance += (float) ($wallet->installement_value ?? 0);
+            } else {
+                $balanceWithoutInstallement += (float) $wallet->balance;
+            }
+        }
 
-        $result = DB::select($query, [$wsId, $wsId]);
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setMonth(now()->month)
+            ->setYear(now()->year)
+            ->setPlanned(true);
 
-        return $result[0];
+        $agregator = ElasticAggregator::create($filters)->totalAmount();
+        $results = SearchService::aggregate($agregator);
+        $plannedTotal = !empty($results) ? ($results[0]->aggregations()->total ?? 0.0) : 0.0;
+
+        $result = new \stdClass();
+        $result->installement_balance = $installementBalance;
+        $result->balance_without_installement = $balanceWithoutInstallement;
+        $result->planned_amount_total = $plannedTotal;
+
+        return $result;
     }
 
     /**
@@ -216,36 +185,26 @@ class StatsRepository
 
         return $wallets;
     }
-    
+
 
     /**
      * Returns the total planned of the current month.
      *
-     * @return int The total planned of the current month.
+     * @return array The total planned of the current month.
      */
-    public function totalPlannedOfCurrentMonth()
+    public function totalPlannedOfCurrentMonth(): array
     {
-        $wsId = $this->wsId;
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setMonth(now()->month)
+            ->setYear(now()->year)
+            ->setPlanned(true);
 
-        $query = "
-            SELECT 
-                COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS planned_amount_total
-            FROM 
-                entries AS e
-            WHERE 
-                e.planned = true
-                AND EXTRACT(MONTH FROM e.date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
-                AND EXTRACT(YEAR FROM e.date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
-                AND e.confirmed = true
-                AND e.deleted_at IS NULL
-                AND e.exclude_from_stats = false
-                AND e.workspace_id = ?;
-        ";
-
-        $result = DB::select($query, [$wsId]);
+        $agregator = ElasticAggregator::create($filters)->totalAmount();
+        $results = SearchService::aggregate($agregator);
 
         return [
-            'total' => $result[0]->planned_amount_total
+            'total' => !empty($results) ? ($results[0]->aggregations()->total ?? 0.0) : 0.0
         ];
     }
 
@@ -255,80 +214,56 @@ class StatsRepository
      * @param array $options An array of filters to apply.
      * @return array An array containing the statistics data.
      */
-    public function statsByFilters(array $options)
+    public function statsByFilters(array $options): array
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $addConditions = '';
-        $addJoins = '';
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate);
+
         if (!empty($options['categories'])) {
-            $addConditions .= " AND query.category_id IN ('" . implode("','", $options['categories']) . "')";
+            $filters->setCategories($options['categories']);
         }
 
         if (!empty($options['accounts'])) {
-            $addJoins .= " AND e.account_id IN ('" . implode("','", $options['accounts']) . "')";
+            $filters->setWalletIds($options['accounts']);
         }
 
         if (!empty($options['payment_methods'])) {
-            $addJoins .= " AND e.payment_type IN ('" . implode("','", $options['payment_methods']) . "')";
+            $filters->setPaymentType($options['payment_methods'][0]);
         }
 
         if (!empty($options['currencies'])) {
-            $addJoins .= " AND e.currency_id IN ('" . implode("','", $options['currencies']) . "')";
+            $filters->setCurrency($options['currencies'][0]);
         }
 
-        if(!empty($options['tags'])) {
-            $tags = $this->entriesFromTags($options['tags']);
-            $entries = array_map(function($entry) {
-                return $entry->id;
-            }, $tags);
-            $entries = implode(',', $entries);
-            $entries = str_replace(',,','',$entries); // Work Around fixme:
-            if(!empty($entries)) {
-                $addJoins .= " AND e.id in ($entries)";
-            }
+        if (!empty($options['tags'])) {
+            $filters->setTags($options['tags']);
         }
 
-        $query = "select * from (
-            SELECT 
-                c.uuid AS category_uuid,
-                cc.type AS category_type,
-                c.slug AS category_slug,
-                COALESCE(SUM(e.amount), 0) AS total,
-                c.id AS category_id
-            FROM 
-                sub_categories AS c
-            JOIN 
-                categories AS cc ON c.category_id = cc.id
-            LEFT JOIN 
-                entries AS e ON e.category_id = c.id
-                AND e.exclude_from_stats = false
-                AND e.deleted_at IS NULL
-                AND e.confirmed = true
-                AND e.planned = false
-                AND e.date_time >= :startDate
-                AND e.date_time < :endDate
-                AND e.workspace_id = :wsId
-                AND e.type IN ('expenses', 'incoming', 'debit')
-                $addJoins
-            GROUP BY 
-                cc.type, c.name, c.id, c.uuid, c.slug
-                ) as query
-            WHERE 
-                query.category_type in ('incoming','expenses', 'debit')
-                $addConditions
-            ORDER BY
-                query.category_type desc;";
+        $agregator = ElasticAggregator::create($filters)->groupByCategory();
+        $results = SearchService::aggregate($agregator);
 
-        $result = DB::select($query, [
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'wsId' => $wsId
-        ]);
+        if (empty($results)) {
+            return [];
+        }
 
-        return $result;
+        $entries = [];
+        foreach ($results as $value) {
+            $aggregation = $value->aggregations();
+            $entry = new \stdClass();
+            $entry->total = $aggregation->total ?? 0.0;
+            $entry->category_slug = $aggregation->category_slug ?? null;
+            $entry->category_id = $aggregation->category_id ?? null;
+            $entry->category_uuid = null;
+            $entry->category_type = null;
+            $entries[] = $entry;
+        }
+
+        return $entries;
     }
 
     /**
@@ -339,72 +274,52 @@ class StatsRepository
      */
     protected function entriesFromTags(array $tags): array
     {
-        $query = "select entries.* from entries
-        right join entry_labels on entries.id = entry_labels.entry_id
-        right join labels on entry_labels.labels_id = labels.id
-        where labels.id in (".implode(',', $tags).") AND entries.deleted_at IS NULL;";
-        $results = DB::select($query);
-
-        if(empty($results)) {
+        if (empty($tags)) {
             return [];
         }
 
-        return $results;
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setTags($tags);
+
+        return SearchService::search($filters);
     }
 
     /**
      * Retrieves statistics by category slug.
      *
      * @param string $categorySlug The slug of the category.
-     * @param bool $isPlanned (optional) Whether the statistics are planned or not. Default is 0.
-     * @return stdClass
+     * @param bool $isPlanned (optional) Whether the statistics are planned or not. Default is false.
+     * @return \stdClass
      */
-    public function statsByCategories(string $categorySlug, bool $isPlanned = false): stdClass
+    public function statsByCategories(string $categorySlug, bool $isPlanned = false): \stdClass
     {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
-        $andPlanned = '';
-        if($isPlanned) {
-            $andPlanned = "AND e.planned = true";
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate);
+
+        if ($isPlanned) {
+            $filters->setPlanned(true);
         }
 
-        $query = "
-            SELECT 
-                c.uuid AS category_uuid,
-                cc.type AS category_type,
-                c.slug AS category_slug,
-                COALESCE(SUM(e.amount), 0) AS total,
-                c.id AS category_id
-            FROM 
-                sub_categories AS c
-            JOIN 
-                categories AS cc ON c.category_id = cc.id
-            LEFT JOIN 
-                entries AS e ON e.category_id = c.id
-                AND e.exclude_from_stats = false
-                AND e.deleted_at IS NULL
-                AND e.confirmed = true
-                $andPlanned
-                AND e.date_time >= :startDate
-                AND e.date_time < :endDate
-                AND e.workspace_id = :wsId
-                AND e.type IN ('expenses', 'incoming')
-            WHERE 
-                c.slug = :categorySlug
-            GROUP BY 
-                cc.type, c.name, c.id, c.uuid, c.slug
-            ORDER BY
-                cc.type desc;";
+        $agregator = ElasticAggregator::create($filters)->groupByCategory();
+        $results = SearchService::aggregate($agregator);
 
-        $result = DB::select($query, [
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'wsId' => $wsId,
-            'categorySlug' => $categorySlug
-        ]);
+        $matched = array_filter($results, fn($r) => $r->aggregations()->category_slug === $categorySlug);
+        $first = !empty($matched) ? array_values($matched)[0]->aggregations() : null;
 
-        return $result[0];
+        $result = new \stdClass();
+        $result->category_uuid = null;
+        $result->category_type = null;
+        $result->category_slug = $categorySlug;
+        $result->total = $first->total ?? 0.0;
+        $result->category_id = $first->category_id ?? null;
+
+        return $result;
     }
 
     /**
@@ -414,60 +329,580 @@ class StatsRepository
      */
     public function loanOfCreditCards()
     {
-        $wsId = $this->wsId;
-
         $walletsType = [EntityWallet::creditCard->value, EntityWallet::creditCardRevolving->value];
 
-        $query = "
-            SELECT 
-                a.invoice_date,
-                a.installement_value,
-                a.balance
-            FROM 
-                wallets AS a
-            WHERE 
-                a.deleted_at IS NULL
-                AND a.exclude_from_stats = false
-                AND a.archived = false
-                AND ( 
-                    a.type = '".$walletsType[0]."'
-                    OR a.type = '".$walletsType[1]."' 
-                )
-                AND a.balance < 0
-                AND a.workspace_id = $wsId;
-        ";
-
-        $result = DB::select($query);
-
-        return $result;
+        return Wallet::where('workspace_id', $this->wsId)
+            ->whereNull('deleted_at')
+            ->where('exclude_from_stats', false)
+            ->where('archived', false)
+            ->whereIn('type', $walletsType)
+            ->where('balance', '<', 0)
+            ->get(['invoice_date', 'installement_value', 'balance']);
     }
 
     /**
      * Retrieves the planned entries from the stats repository.
      *
-     * @return stdClass
+     * @return \stdClass
      */
-    public function plannedExpenses(): stdClass {
-        $wsId = $this->wsId;
+    public function plannedExpenses(): \stdClass
+    {
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setMonth(now()->month)
+            ->setYear(now()->year)
+            ->setPlanned(true)
+            ->setType(Entry::expenses->value);
 
-        $query = "
-            SELECT 
-                COALESCE(SUM(CASE WHEN e.planned = true THEN e.amount END), 0) AS total
-            FROM 
-                entries AS e
-            WHERE 
-                e.planned = true
-                AND EXTRACT(MONTH FROM e.date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
-                AND EXTRACT(YEAR FROM e.date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
-                AND e.confirmed = true
-                AND e.deleted_at IS NULL
-                AND e.exclude_from_stats = false
-                AND e.type IN ('expenses')
-                AND e.workspace_id = $wsId;
-        ";
+        $agregator = ElasticAggregator::create($filters)->totalAmount();
+        $results = SearchService::aggregate($agregator);
 
-        $result = DB::select($query);
+        $result = new \stdClass();
+        $result->total = !empty($results) ? ($results[0]->aggregations()->total ?? 0.0) : 0.0;
 
-        return $result[0];
+        return $result;
     }
+
+
+    /**
+     * Retrieves statistics for savings.
+     *
+     * @return array An array containing the statistics for savings.
+     */
+    public function statsSevings(): array
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::saving->value)
+            ->setConfirmed(true)
+            ->setPlanned(false);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return ['total' => 0.0];
+        }
+
+        return [
+            'total' => $results[0]->aggregations()->total ?? 0.0
+        ];
+    }
+
+    // ============ StatsRepositoryInterface Implementation ============
+    // Note: Many methods are implemented in child classes or need to be implemented
+
+    public function statsExpenses(): array
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::expenses->value);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return [];
+        }
+
+        return [
+            'total' => $results[0]->aggregations()->total ?? 0.0
+        ];
+    }
+
+    public function statsIncoming(): array
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(type: Entry::expenses->value);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        return [
+            'total' => $results->total_amount ?? 0.0
+        ];
+    }
+
+/**
+     * Retrieves statistics for debits.
+     *
+     * @return array An array containing the statistics for debits.
+     */
+    public function statsDebits(): array
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setType(Entry::debit->value);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return ['total' => 0.0];
+        }
+
+        return [
+            'total' => $results[0]->aggregations()->total ?? 0.0
+        ];
+    }
+
+    public function statsSavings(): array
+    {
+        throw new \BadMethodCallException('statsSavings should be implemented in SavingRepository');
+    }
+
+    public function statsPlannedEntries(): array
+    {
+        throw new \BadMethodCallException('statsPlannedEntries should be implemented in PlannedEntryRepository');
+    }
+
+    public function expensesByCategory(int $categoryId): array|\Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory
+    {
+        throw new \BadMethodCallException('expensesByCategory should be implemented in ExpensesRepository');
+    }
+
+    public function incomingByCategory(?int $categoryId = null): array
+    {
+        throw new \BadMethodCallException('incomingByCategory should be implemented in IncomingRepository');
+    }
+
+    public function debitsByCategory(?int $categoryId = null): array
+    {
+        throw new \BadMethodCallException('debitsByCategory should be implemented in DebitRepository');
+    }
+
+    public function savingsByCategory(?int $categoryId = null): array
+    {
+        throw new \BadMethodCallException('savingsByCategory should be implemented in SavingRepository');
+    }
+
+    public function transactionsByWallet(?int $walletId = null): array
+    {
+        // TODO: Implement generic wallet analysis
+        throw new \BadMethodCallException('transactionsByWallet method not yet implemented');
+    }
+
+    public function walletBalances(): array
+    {
+        // TODO: Implement wallet balances
+        throw new \BadMethodCallException('walletBalances method not yet implemented');
+    }
+
+    public function monthlyBreakdown(string $type = 'all'): array
+    {
+        // TODO: Implement monthly breakdown
+        throw new \BadMethodCallException('monthlyBreakdown method not yet implemented');
+    }
+
+    public function weeklyBreakdown(string $type = 'all'): array
+    {
+        // TODO: Implement weekly breakdown
+        throw new \BadMethodCallException('weeklyBreakdown method not yet implemented');
+    }
+
+    public function dailyBreakdown(string $type = 'all'): array
+    {
+        // TODO: Implement daily breakdown
+        throw new \BadMethodCallException('dailyBreakdown method not yet implemented');
+    }
+
+    public function yearlyBreakdown(string $type = 'all'): array
+    {
+        // TODO: Implement yearly breakdown
+        throw new \BadMethodCallException('yearlyBreakdown method not yet implemented');
+    }
+
+    public function transactionsByPaymentType(string $type = 'all'): array
+    {
+        // TODO: Implement payment type analysis
+        throw new \BadMethodCallException('transactionsByPaymentType method not yet implemented');
+    }
+
+    public function transactionsByCurrency(string $type = 'all'): array
+    {
+        // TODO: Implement currency analysis
+        throw new \BadMethodCallException('transactionsByCurrency method not yet implemented');
+    }
+
+    public function totalNegativeStatsDebits(): array
+    {
+        throw new \BadMethodCallException('totalNegativeStatsDebits should be implemented in DebitRepository');
+    }
+
+    public function transactionCounts(): array
+    {
+        // TODO: Implement transaction counts
+        throw new \BadMethodCallException('transactionCounts method not yet implemented');
+    }
+
+    public function averageAmounts(): array
+    {
+        // TODO: Implement average amounts
+        throw new \BadMethodCallException('averageAmounts method not yet implemented');
+    }
+
+    public function minMaxAmounts(): array
+    {
+        // TODO: Implement min/max amounts
+        throw new \BadMethodCallException('minMaxAmounts method not yet implemented');
+    }
+
+    public function searchTransactions(ElasticFilter $filter, int $from = 0, int $size = 50): array
+    {
+        // TODO: Implement Elasticsearch search
+        throw new \BadMethodCallException('searchTransactions method not yet implemented');
+    }
+
+    public function aggregate(ElasticAggregator $aggregator): array
+    {
+        // TODO: Implement Elasticsearch aggregation
+        throw new \BadMethodCallException('aggregate method not yet implemented');
+    }
+
+    public function getFinancialSummary(?ElasticFilter $additionalFilters = null): array
+    {
+        // TODO: Implement financial summary
+        throw new \BadMethodCallException('getFinancialSummary method not yet implemented');
+    }
+
+    public function getCategoryAnalysis(?ElasticFilter $additionalFilters = null): array
+    {
+        // TODO: Implement category analysis
+        throw new \BadMethodCallException('getCategoryAnalysis method not yet implemented');
+    }
+
+    public function getPaymentAnalysis(?ElasticFilter $additionalFilters = null): array
+    {
+        // TODO: Implement payment analysis
+        throw new \BadMethodCallException('getPaymentAnalysis method not yet implemented');
+    }
+
+    public function getTimeAnalysis(?ElasticFilter $additionalFilters = null): array
+    {
+        // TODO: Implement time analysis
+        throw new \BadMethodCallException('getTimeAnalysis method not yet implemented');
+    }
+
+    public function getBehaviorAnalysis(?ElasticFilter $additionalFilters = null): array
+    {
+        // TODO: Implement behavior analysis
+        throw new \BadMethodCallException('getBehaviorAnalysis method not yet implemented');
+    }
+
+    public function getWorkspaceSummary(): array
+    {
+        return [
+            'workspace_id' => $this->wsId,
+            'period' => [
+                'start' => $this->startDate->toDateString(),
+                'end' => $this->endDate->toDateString(),
+            ],
+            'total' => $this->total(),
+            'stats_total' => $this->statsTotal(),
+        ];
+    }
+
+    public function transactionExists(string $uuid): bool
+    {
+        // TODO: Implement transaction existence check
+        throw new \BadMethodCallException('transactionExists method not yet implemented');
+    }
+
+    public function getTransactionByUuid(string $uuid): ?ElasticTransaction
+    {
+        // TODO: Implement get transaction by UUID
+        throw new \BadMethodCallException('getTransactionByUuid method not yet implemented');
+    }
+
+    public function getTransactionsWithFilters(array $filters, int $limit = 100, int $offset = 0): array
+    {
+        // TODO: Implement filtered transactions
+        throw new \BadMethodCallException('getTransactionsWithFilters method not yet implemented');
+    }
+
+    public function comparePeriods(Carbon $previousStartDate, Carbon $previousEndDate): array
+    {
+        // TODO: Implement period comparison
+        throw new \BadMethodCallException('comparePeriods method not yet implemented');
+    }
+
+    public function getGrowthRates(Carbon $previousStartDate, Carbon $previousEndDate): array
+    {
+        // TODO: Implement growth rates
+        throw new \BadMethodCallException('getGrowthRates method not yet implemented');
+    }
+
+    public function getSpendingTrends(int $periods = 12, string $interval = 'month'): array
+    {
+        // TODO: Implement spending trends
+        throw new \BadMethodCallException('getSpendingTrends method not yet implemented');
+    }
+
+    public function getIncomeTrends(int $periods = 12, string $interval = 'month'): array
+    {
+        // TODO: Implement income trends
+        throw new \BadMethodCallException('getIncomeTrends method not yet implemented');
+    }
+
+    public function getCategoryTrends(int $categoryId, int $periods = 12, string $interval = 'month'): array
+    {
+        // TODO: Implement category trends
+        throw new \BadMethodCallException('getCategoryTrends method not yet implemented');
+    }
+
+    public function getBudgetComparison(): array
+    {
+        // TODO: Implement budget comparison
+        throw new \BadMethodCallException('getBudgetComparison method not yet implemented');
+    }
+
+    public function getSavingsRate(): array
+    {
+        // TODO: Implement savings rate
+        throw new \BadMethodCallException('getSavingsRate method not yet implemented');
+    }
+
+    public function getExpenseRatios(): array
+    {
+        // TODO: Implement expense ratios
+        throw new \BadMethodCallException('getExpenseRatios method not yet implemented');
+    }
+
+    public function predictExpenses(int $months = 3): array
+    {
+        // TODO: Implement expense prediction
+        throw new \BadMethodCallException('predictExpenses method not yet implemented');
+    }
+
+    public function predictIncome(int $months = 3): array
+    {
+        // TODO: Implement income prediction
+        throw new \BadMethodCallException('predictIncome method not yet implemented');
+    }
+
+    public function generateFinancialReport(): array
+    {
+        // TODO: Implement financial report
+        throw new \BadMethodCallException('generateFinancialReport method not yet implemented');
+    }
+
+    public function generateCashFlowReport(): array
+    {
+        // TODO: Implement cash flow report
+        throw new \BadMethodCallException('generateCashFlowReport method not yet implemented');
+    }
+
+    public function generateCategorySpendingReport(): array
+    {
+        // TODO: Implement category spending report
+        throw new \BadMethodCallException('generateCategorySpendingReport method not yet implemented');
+    }
+
+    public function getKPIs(): array
+    {
+        // TODO: Implement KPIs
+        throw new \BadMethodCallException('getKPIs method not yet implemented');
+    }
+
+    public function getFinancialHealthScore(): array
+    {
+        // TODO: Implement financial health score
+        throw new \BadMethodCallException('getFinancialHealthScore method not yet implemented');
+    }
+
+    public function getSpendingEfficiencyMetrics(): array
+    {
+        // TODO: Implement spending efficiency metrics
+        throw new \BadMethodCallException('getSpendingEfficiencyMetrics method not yet implemented');
+    }
+
+    public function getByWallet(?int $walletId = null): array
+    {
+        // TODO: Implement wallet-specific expenses
+        throw new \BadMethodCallException('getByWallet method not yet implemented');
+    }
+
+    public function getByDateRange(\Carbon\Carbon $start, \Carbon\Carbon $end): array
+    {
+        // TODO: Implement date range expenses
+        throw new \BadMethodCallException('getByDateRange method not yet implemented');
+    }
+
+    public function getTotalAmount(): float
+    {
+        $stats = $this->statsExpenses();
+        return (float) ($stats['total'] ?? 0.0);
+    }
+
+    public function getAverageAmount(): float
+    {
+        // TODO: Implement average calculation
+        throw new \BadMethodCallException('getAverageAmount method not yet implemented');
+    }
+
+    public function getCount(): int
+    {
+        // TODO: Implement count
+        throw new \BadMethodCallException('getCount method not yet implemented');
+    }
+
+    public function getMinMaxAmounts(): array
+    {
+        // TODO: Implement min/max calculation
+        throw new \BadMethodCallException('getMinMaxAmounts method not yet implemented');
+    }
+
+    public function getMonthlyTrend(int $months = 12): array
+    {
+        // TODO: Implement monthly trend
+        throw new \BadMethodCallException('getMonthlyTrend method not yet implemented');
+    }
+
+    public function getWeeklyTrend(int $weeks = 12): array
+    {
+        // TODO: Implement weekly trend
+        throw new \BadMethodCallException('getWeeklyTrend method not yet implemented');
+    }
+
+    public function getDailyTrend(int $days = 30): array
+    {
+        // TODO: Implement daily trend
+        throw new \BadMethodCallException('getDailyTrend method not yet implemented');
+    }
+
+    public function compareWithPrevious(\Carbon\Carbon $previousStart, \Carbon\Carbon $previousEnd): array
+    {
+        // TODO: Implement period comparison
+        throw new \BadMethodCallException('compareWithPrevious method not yet implemented');
+    }
+
+    public function getGrowthRate(\Carbon\Carbon $previousStart, \Carbon\Carbon $previousEnd): float
+    {
+        // TODO: Implement growth rate calculation
+        throw new \BadMethodCallException('getGrowthRate method not yet implemented');
+    }
+
+    public function getWithFilters(ElasticFilter $filter, int $limit = 100, int $offset = 0): array
+    {
+        // TODO: Implement Elasticsearch filtering
+        throw new \BadMethodCallException('getWithFilters method not yet implemented');
+    }
+
+    public function getAggregated(ElasticAggregator $aggregator): array
+    {
+        // TODO: Implement Elasticsearch aggregation
+        throw new \BadMethodCallException('getAggregated method not yet implemented');
+    }
+
+    public function getTopTransactions(int $limit = 10): array
+    {
+        // TODO: Implement top transactions
+        throw new \BadMethodCallException('getTopTransactions method not yet implemented');
+    }
+
+    public function getBottomTransactions(int $limit = 10): array
+    {
+        // TODO: Implement bottom transactions
+        throw new \BadMethodCallException('getBottomTransactions method not yet implemented');
+    }
+
+    public function getTopCategories(int $limit = 10): array
+    {
+        // TODO: Implement top categories
+        throw new \BadMethodCallException('getTopCategories method not yet implemented');
+    }
+
+    public function getTopPaymentTypes(int $limit = 10): array
+    {
+        // TODO: Implement top payment types
+        throw new \BadMethodCallException('getTopPaymentTypes method not yet implemented');
+    }
+
+    public function getRecurringPatterns(): array
+    {
+        // TODO: Implement recurring patterns
+        throw new \BadMethodCallException('getRecurringPatterns method not yet implemented');
+    }
+
+    public function getSeasonalPatterns(): array
+    {
+        // TODO: Implement seasonal patterns
+        throw new \BadMethodCallException('getSeasonalPatterns method not yet implemented');
+    }
+
+    public function getWeekendWeekdayPatterns(): array
+    {
+        // TODO: Implement weekend/weekday patterns
+        throw new \BadMethodCallException('getWeekendWeekdayPatterns method not yet implemented');
+    }
+
+    function getByCategory(?int $categoryId = null): array
+    {
+        //TODO: Implement category-specific expenses
+        throw new \BadMethodCallException('getByCategory method not yet implemented');
+    }
+
+    function getDefaultFilters(): \BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter
+    {
+        //TODO: Implement default filters
+        throw new \BadMethodCallException('getDefaultFilters method not yet implemented');
+    }
+
+    function getStats(): array
+    {
+        //TODO: Implement stats retrieval
+        throw new \BadMethodCallException('getStats method not yet implemented');
+    }
+
+    function getTransactionType(): string
+    {
+        //TODO: Implement transaction type retrieval
+        throw new \BadMethodCallException('getTransactionType method not yet implemented');
+    }
+
+    function isPositiveAmount(): bool
+    {
+        //TODO: Implement positive amount check
+        throw new \BadMethodCallException('isPositiveAmount method not yet implemented');
+    }
+
+    public function expensesByLabels(): array
+    {
+        throw new \BadMethodCallException('expensesByLabels should be implemented in ExpensesRepository');
+    }
+    public function expensesByCategories(): array
+    {
+        throw new \BadMethodCallException('expensesByCategories should be implemented in ExpensesRepository');
+    }
+
+
 }

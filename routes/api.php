@@ -31,3 +31,6 @@ $app->get('/{wsid}/debits/total-positive', \Budgetcontrol\Stats\Controller\Stats
 
 $app->get('/monitor', \Budgetcontrol\Stats\Controller\Controller::class . ':monitor');
 
+// private api for internal use
+$app->post('/elasticsearch/{wsid}/index/transaction', \Budgetcontrol\Stats\Controller\Elastic\InternalIndexingController::class . ':indexTransaction');
+$app->post('/elasticsearch/index/transactions/bulk', \Budgetcontrol\Stats\Controller\Elastic\InternalIndexingController::class . ':bulkIndexTransactions');

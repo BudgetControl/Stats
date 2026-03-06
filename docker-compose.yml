@@ -3,7 +3,7 @@ version: '2.2'
 services:
     bemodule:
       container_name: budgetcontrol-ms-stats
-      image: mlabfactory/php8-apache:v1.2-xdebug
+      image: mlabfactory/php8-apache:v1.4.1-xdebug
       volumes:
         - ./:/var/www/workdir
       networks:

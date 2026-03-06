@@ -2,7 +2,7 @@
 
 require_once __DIR__ . "/../bootstrap/app.php";
 
-$app = \Slim\Factory\AppFactory::create();
+$app = \Slim\Factory\AppFactory::createFromContainer($container);
 
 /**
  * The routing middleware should be added earlier than the ErrorMiddleware

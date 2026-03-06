@@ -1,41 +1,44 @@
 <?php
 namespace Budgetcontrol\Stats\Domain\Repository;
 
-use Illuminate\Database\Capsule\Manager as DB;
 use Budgetcontrol\Library\Entity\Entry;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
+use Budgetcontrol\Stats\Facade\SearchService;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
+use Carbon\Carbon;
 
-class SavingRepository extends StatsRepository{
-    
-    /**
-     * Retrieves statistics for savings.
-     *
-     * @return array An array containing the statistics for savings.
-     */
-    public function statsSevings() 
+class SavingRepository extends StatsRepository implements TransactionRepositoryInterface {
+
+
+    // ============ TransactionRepositoryInterface Implementation ============
+
+    public function getStats(): array
     {
-        $wsId = $this->wsId;
-        $startDate = $this->startDate->toAtomString();
-        $endDate = $this->endDate->toAtomString();
-
-        $query = "
-            SELECT COALESCE(SUM(e.amount), 0) AS total
-            FROM entries AS e
-            WHERE e.category_id = 62
-            AND e.exclude_from_stats = false
-            AND e.deleted_at is null
-            AND e.confirmed = true
-            AND e.amount < 0
-            AND e.planned = false
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND e.workspace_id = $wsId;
-        ";
-
-        $result = DB::select($query);
-
-        return [
-            'total' => $result[0]->total
-        ];
+        return $this->statsSevings();
     }
 
+    public function getByCategory(?int $categoryId = null): array
+    {
+        return [];
+    }
+
+    public function getTransactionType(): string
+    {
+        return Entry::saving->value;
+    }
+
+    public function isPositiveAmount(): bool
+    {
+        return false;
+    }
+
+    public function getDefaultFilters(): ElasticFilter
+    {
+        return ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setType(Entry::saving->value)
+            ->setStartDate($this->startDate->toDateString())
+            ->setEndDate($this->endDate->toDateString());
+    }
 }

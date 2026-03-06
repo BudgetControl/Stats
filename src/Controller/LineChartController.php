@@ -2,15 +2,10 @@
 
 namespace Budgetcontrol\Stats\Controller;
 
-use DateTime;
 use Illuminate\Support\Carbon;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChart;
-use Budgetcontrol\Stats\Domain\Repository\DebitRepository;
-use Budgetcontrol\Stats\Domain\Repository\SavingRepository;
-use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
-use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartPoint;
 use Budgetcontrol\Stats\Domain\Entity\LineChart\LineChartSeries;
 
@@ -34,43 +29,22 @@ class LineChartController extends ChartController
             $endDate = Carbon::rawParse($value['end']);
 
             // incoming
-            $incomingRepository = new IncomingRepository(
+            $repository = $this->repository->setup(
             $arg['wsid'],
             $startDate,
             $endDate
             );
-
-            // expenses
-            $expensesRepository = new ExpensesRepository(
-            $arg['wsid'],
-            $startDate,
-            $endDate
-            );
-
-            // debit
-            $debitRepository = new DebitRepository(
-            $arg['wsid'],
-            $startDate,
-            $endDate
-            );
-
-            // savings
-            $savingRepository = new SavingRepository(
-                $arg['wsid'],
-                $startDate,
-                $endDate
-                );
 
             $yValue = max(
-            $incomingRepository->statsIncoming()['total'],
-            $expensesRepository->statsExpenses()['total'],
-            $debitRepository->statsDebits()['total'],
-            $savingRepository->statsSevings()['total']
+                $repository->statsIncoming()['total'],
+                $repository->statsExpenses()['total'],
+                $repository->statsDebits()['total'],
+                $repository->statsSevings()['total']
             );
 
             $incomingSeries->addDataPoint(
             new LineChartPoint(
-                $incomingRepository->statsIncoming()['total'],
+                $repository->statsIncoming()['total'],
                 $yValue, 
                 $startDate->format('M')
             )
@@ -78,7 +52,7 @@ class LineChartController extends ChartController
 
             $expensesSeries->addDataPoint(
             new LineChartPoint(
-                $expensesRepository->statsExpenses()['total'],
+                $repository->statsExpenses()['total'],
                 $yValue,
                 $startDate->format('M')
             )
@@ -86,7 +60,7 @@ class LineChartController extends ChartController
 
             $debitSeries->addDataPoint(
             new LineChartPoint(
-                $debitRepository->statsDebits()['total'],
+                $repository->statsDebits()['total'],
                 $yValue,
                 $startDate->format('M')
             )
@@ -94,7 +68,7 @@ class LineChartController extends ChartController
 
             $savingtSeries->addDataPoint(
                 new LineChartPoint(
-                    $savingRepository->statsSevings()['total'],
+                    $repository->statsSevings()['total'],
                     $yValue,
                     $startDate->format('M')
                 )

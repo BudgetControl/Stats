@@ -2,14 +2,11 @@
 
 namespace Budgetcontrol\Stats\Controller;
 
-use Budgetcontrol\Library\Model\Category;
 use Budgetcontrol\Library\Model\Label;
-use DateTime;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Budgetcontrol\Stats\Domain\Entity\BarChart\BarChart;
 use Budgetcontrol\Stats\Domain\Entity\BarChart\BarChartBar;
-use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Illuminate\Support\Carbon;
 use Budgetcontrol\Library\Model\SubCategory;
 
@@ -28,7 +25,7 @@ class BarChartController extends ChartController
             $startDate = Carbon::rawParse($value['start']);
             $endDate = Carbon::rawParse($value['end']);
 
-            $expensesRepository = new ExpensesRepository(
+            $expensesRepository = $this->repository->setup(
                 $arg['wsid'],
                 $startDate,
                 $endDate
@@ -64,7 +61,7 @@ class BarChartController extends ChartController
             $startDate = Carbon::rawParse($value['start']);
             $endDate = Carbon::rawParse($value['end']);
 
-            $incomingRepository = new ExpensesRepository(
+            $incomingRepository = $this->repository->setup(
                 $arg['wsid'],
                 $startDate,
                 $endDate

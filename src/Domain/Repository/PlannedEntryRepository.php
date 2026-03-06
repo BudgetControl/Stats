@@ -5,38 +5,30 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Budgetcontrol\Library\Definition\Period;
 use Budgetcontrol\Library\Entity\Entry;
-use Illuminate\Database\Capsule\Manager as DB;
+use Budgetcontrol\Library\Model\PlannedEntry;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
+use Budgetcontrol\Stats\Facade\SearchService;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
+use Carbon\Carbon;
 
-class PlannedEntryRepository extends StatsRepository {
+class PlannedEntryRepository extends StatsRepository implements TransactionRepositoryInterface {
     
     /**
      * Retrieves the planned expenses.
      *
      * @return array The planned expenses.
      */
-    public function getPlanedMonthlyExpenses(): array {
-        $wsId = $this->wsId;
-        $expensesLabel = Entry::expenses->value;
-        $plannedtypeLabelMonthly = Period::monthly->value;
+    public function getPlanedMonthlyExpenses(): array
+    {
+        $total = PlannedEntry::where('workspace_id', $this->wsId)
+            ->where('type', Entry::expenses->value)
+            ->whereNull('deleted_at')
+            ->where('planning', Period::monthly->value)
+            ->where('end_date_time', '>=', now()->toDateString())
+            ->sum('amount');
 
-        $query = "
-            SELECT 
-                COALESCE(SUM(e.amount), 0) AS total
-            FROM 
-                planned_entries AS e
-            WHERE 
-                e.type IN ('$expensesLabel')
-                AND e.deleted_at IS NULL
-                AND e.planning = '$plannedtypeLabelMonthly'
-                AND e.end_date_time >= CURRENT_DATE
-                AND e.workspace_id = $wsId;
-        ";
-
-        $result = DB::select($query);
-
-        return [
-            'total' => $result[0]->total
-        ];
+        return ['total' => (float) $total];
     }
 
     /**
@@ -44,29 +36,16 @@ class PlannedEntryRepository extends StatsRepository {
      *
      * @return array An array containing the planned weekly expenses.
      */
-    public function getPlanedWeeklyExpenses(): array {
-        $wsId = $this->wsId;
-        $expensesLabel = Entry::expenses->value;
-        $plannedtypeLabelWeekly = Period::weekly->value;
+    public function getPlanedWeeklyExpenses(): array
+    {
+        $total = PlannedEntry::where('workspace_id', $this->wsId)
+            ->where('type', Entry::expenses->value)
+            ->whereNull('deleted_at')
+            ->where('planning', Period::weekly->value)
+            ->where('end_date_time', '>=', now()->toDateString())
+            ->sum('amount');
 
-        $query = "
-            SELECT 
-                COALESCE(SUM(e.amount), 0) AS total
-            FROM 
-                planned_entries AS e
-            WHERE 
-                e.type IN ('$expensesLabel')
-                AND e.deleted_at IS NULL
-                AND e.planning = '$plannedtypeLabelWeekly'
-                AND e.end_date_time >= CURRENT_DATE
-                AND e.workspace_id = $wsId;
-        ";
-
-        $result = DB::select($query);
-
-        return [
-            'total' => $result[0]->total
-        ];
+        return ['total' => (float) $total];
     }
 
     /**
@@ -74,53 +53,74 @@ class PlannedEntryRepository extends StatsRepository {
      *
      * @return array An array containing the planned daily expenses.
      */
-    public function getPlanedDailyExpenses(): array {
-        $wsId = $this->wsId;
-        $expensesLabel = Entry::expenses->value;
-        $plannedtypeLabelDaily = Period::daily->value;
+    public function getPlanedDailyExpenses(): array
+    {
+        $total = PlannedEntry::where('workspace_id', $this->wsId)
+            ->where('type', Entry::expenses->value)
+            ->whereNull('deleted_at')
+            ->where('planning', Period::daily->value)
+            ->where('end_date_time', '>=', now()->toDateString())
+            ->sum('amount');
 
-        $query = "
-            SELECT 
-                COALESCE(SUM(e.amount), 0) AS total
-            FROM 
-                planned_entries AS e
-            WHERE 
-                e.type IN ('$expensesLabel')
-                AND e.deleted_at IS NULL
-                AND e.planning = '$plannedtypeLabelDaily'
-                AND e.end_date_time >= CURRENT_DATE
-                AND e.workspace_id = $wsId;
-        ";
-
-        $result = DB::select($query);
-
-        return [
-            'total' => $result[0]->total
-        ];
+        return ['total' => (float) $total];
     }
 
-    public function plannedOfPeriod() {
+    /**
+     * Retrieves the planned entries of the current period.
+     */
+    public function plannedOfPeriod(): array
+    {
         $wsId = $this->wsId;
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
-        
-        $query = "
-            SELECT COALESCE(SUM(e.amount), 0) AS total
-            FROM entries AS e
-            WHERE 
-            e.exclude_from_stats = false
-            AND e.deleted_at IS NULL
-            AND e.confirmed = true
-            AND e.planned = true
-            AND e.date_time >= '$startDate'
-            AND e.date_time < '$endDate'
-            AND e.workspace_id = $wsId;
-        ";
 
-        $result = DB::select($query);
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setPlanned(true);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return ['total' => 0.0];
+        }
 
         return [
-            'total' => $result[0]->total
+            'total' => $results[0]->aggregations()->total ?? 0.0
         ];
+    }
+
+    // ============ TransactionRepositoryInterface Implementation ============
+
+    public function getStats(): array
+    {
+        return $this->plannedOfPeriod();
+    }
+
+    public function getByCategory(?int $categoryId = null): array
+    {
+        return [];
+    }
+
+    public function getTransactionType(): string
+    {
+        return 'planned';
+    }
+
+    public function isPositiveAmount(): bool
+    {
+        return false;
+    }
+
+    public function getDefaultFilters(): ElasticFilter
+    {
+        return ElasticFilter::create()
+            ->setWorkspaceId($this->wsId)
+            ->setPlanned(true)
+            ->setStartDate($this->startDate->toDateString())
+            ->setEndDate($this->endDate->toDateString());
     }
 }

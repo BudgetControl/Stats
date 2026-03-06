@@ -5,7 +5,6 @@ namespace Budgetcontrol\Stats\Controller;
 use Illuminate\Support\Carbon;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Entity\ApplePie\ApplePieChart;
 use Budgetcontrol\Stats\Domain\Entity\ApplePie\ApplePieChartField;
 
@@ -27,13 +26,10 @@ class ApplePieChartController extends ChartController
             $startDate = Carbon::rawParse($value['start']);
             $endDate = Carbon::rawParse($value['end']);
 
-            $incomingRepository = new ExpensesRepository(
-                $arg['wsid'],
-                $startDate,
-                $endDate
-            );
+            $expensesResults = $this->repository->setup($arg['wsid'], $startDate, $endDate)->expensesByLabels();
 
-            foreach($incomingRepository->expensesByLabels() as $label) {
+            /** @var \Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory $expenses */
+            foreach($expensesResults as $label) {
                 if ($labels && !in_array($label->label_name, $labels)) {
                     continue;
                 }
@@ -41,8 +37,8 @@ class ApplePieChartController extends ChartController
                 $applePieChart->addField(
                     new ApplePieChartField(
                         $label->total,
-                        $label->label_name,
-                        $label->label_id
+                        $label->name,
+                        $label->id
                     )
                 );
 
