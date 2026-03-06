@@ -1,307 +1,126 @@
 <?php
-declare(strict_types=1);
 
 namespace Budgetcontrol\Stats\Domain\Repository\Interfaces;
 
-use Carbon\Carbon;
-use Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory;
-use Budgetcontrol\Stats\Domain\Entity\ElasticTransaction;
-use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
-use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\DebitRepoInterface;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\ExpensesRepoInterface;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\IncomingRepoInterface;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\PlannedEntryRepoInterface;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\SavingRepoInterface;
+use Illuminate\Database\Eloquent\Collection;
 
-interface StatsRepositoryInterface
+interface StatsRepositoryInterface extends DebitRepoInterface, IncomingRepoInterface, SavingRepoInterface, PlannedEntryRepoInterface, ExpensesRepoInterface
 {
 
-    public function setup(string $wsId, Carbon $startDate, Carbon $endDate): self;
-
-    // ============ BASIC STATS ============
-    
     /**
-     * Get total balance across all wallets
+     * Retrieves the total stats.
+     *
+     * @return array The total stats.
+     */
+    public function statsTotal(): array;
+
+    /**
+     * Returns the total value.
+     *
+     * @return array The total value.
      */
     public function total(): array;
 
     /**
-     * Get total stats for all transaction types in date range
+     * Retrieves the wallets from the repository.
+     *
+     * @return array An array of wallets.
      */
-    public function statsTotal(): array;
-
-    // ============ TRANSACTION TYPE STATS ============
-    
-    /**
-     * Get expenses statistics
-     */
-    public function statsExpenses(): array;
+    public function wallets();
 
     /**
-     * Get incoming statistics  
-     */
-    public function statsIncoming(): array;
-
-    /**
-     * Get debits statistics
-     */
-    public function statsDebits(): array;
-
-    /**
-     * Summary of statsSevings
+     * Checks the health of the repository.
+     *
      * @return array
+     */
+    public function health();
+
+    /**
+     * Calculates the total with planned value for the current month.
+     *
+     * @return \stdClass The total value with planned for the current month.
+     */
+    public function totalWithPlannedOfCurrentMonth(): \stdClass;
+
+    /**
+     * Retrieves the planned entries of the current period.
+     */
+    public function plannedOfPeriod(): array;
+
+    /**
+     * Retrieves the installment values.
+     *
+     * @return array The installment values.
+     */
+    public function currentInstallmentValues(): array|Collection;
+
+
+    /**
+     * Returns the total planned of the current month.
+     *
+     * @return array The total planned of the current month.
+     */
+    public function totalPlannedOfCurrentMonth(): array;
+
+    /**
+     * Retrieves statistics based on the provided filters.
+     *
+     * @param array $options An array of filters to apply.
+     * @return array An array containing the statistics data.
+     */
+    public function statsByFilters(array $options): array;
+
+    /**
+     * Retrieves statistics by category slug.
+     *
+     * @param string $categorySlug The slug of the category.
+     * @param bool $isPlanned (optional) Whether the statistics are planned or not. Default is false.
+     * @return \stdClass
+     */
+    public function statsByCategories(string $categorySlug, bool $isPlanned = false): \stdClass;
+
+    /**
+     * Retrieves the loan of credit cards.
+     *
+     * @return mixed The loan of credit cards.
+     */
+    public function loanOfCreditCards();
+
+    /**
+     * Retrieves the planned entries from the stats repository.
+     *
+     * @return \stdClass
+     */
+    public function plannedExpenses(): \stdClass;
+
+
+    /**
+     * Retrieves statistics for savings.
+     *
+     * @return array An array containing the statistics for savings.
      */
     public function statsSevings(): array;
 
-    /**
-     * Get savings statistics
-     */
-    public function statsSavings(): array;
+
+    // ============ StatsRepositoryInterface Implementation ============
+    // Note: Many methods are implemented in child classes or need to be implemented
+
+    public function statsExpenses(): array;
+
+    public function statsIncoming(): array;
 
     /**
-     * Get planned entries statistics
+     * Retrieves statistics for debits.
+     *
+     * @return array An array containing the statistics for debits.
      */
-    public function statsPlannedEntries(): array;
+    public function statsDebits(): array;
 
-    // ============ CATEGORY ANALYSIS ============
-    
-    /**
-     * Get expenses grouped by category
-     */
-    public function expensesByCategory(int $categoryId): array|ExpensesCategory;
-
-    /**
-     * Get incoming grouped by category
-     */
-    public function incomingByCategory(?int $categoryId = null): array;
-
-    /**
-     * Get debits grouped by category
-     */
-    public function debitsByCategory(?int $categoryId = null): array;
-
-    /**
-     * Get savings grouped by category
-     */
-    public function savingsByCategory(?int $categoryId = null): array;
-
-    // ============ WALLET ANALYSIS ============
-    
-    /**
-     * Get transactions grouped by wallet
-     */
-    public function transactionsByWallet(?int $walletId = null): array;
-
-    /**
-     * Get wallet balances
-     */
-    public function walletBalances(): array;
-
-    // ============ TIME-BASED ANALYSIS ============
-    
-    /**
-     * Get monthly breakdown of transactions
-     */
-    public function monthlyBreakdown(string $type = 'all'): array;
-
-    /**
-     * Get weekly breakdown of transactions
-     */
-    public function weeklyBreakdown(string $type = 'all'): array;
-
-    /**
-     * Get daily breakdown of transactions
-     */
-    public function dailyBreakdown(string $type = 'all'): array;
-
-    /**
-     * Get yearly breakdown of transactions
-     */
-    public function yearlyBreakdown(string $type = 'all'): array;
-
-    // ============ PAYMENT TYPE ANALYSIS ============
-    
-    /**
-     * Get transactions grouped by payment type
-     */
-    public function transactionsByPaymentType(string $type = 'all'): array;
-
-    /**
-     * Get transactions grouped by currency
-     */
-    public function transactionsByCurrency(string $type = 'all'): array;
-
-    // ============ ADVANCED STATS ============
-    
-    /**
-     * Get negative/positive breakdown
-     */
-    public function totalNegativeStatsDebits(): array;
-
-    /**
-     * Get transaction count statistics
-     */
-    public function transactionCounts(): array;
-
-    /**
-     * Get average transaction amounts
-     */
-    public function averageAmounts(): array;
-
-    /**
-     * Get min/max transaction amounts
-     */
-    public function minMaxAmounts(): array;
-
-    // ============ ELASTICSEARCH METHODS ============
-    
-    /**
-     * Search transactions using filters
-     */
-    public function searchTransactions(ElasticFilter $filter, int $from = 0, int $size = 50): array;
-
-    /**
-     * Execute aggregation queries
-     */
-    public function aggregate(ElasticAggregator $aggregator): array;
-
-    /**
-     * Get financial summary using Elasticsearch
-     */
-    public function getFinancialSummary(?ElasticFilter $additionalFilters = null): array;
-
-    /**
-     * Get category analysis using Elasticsearch
-     */
-    public function getCategoryAnalysis(?ElasticFilter $additionalFilters = null): array;
-
-    /**
-     * Get payment analysis using Elasticsearch
-     */
-    public function getPaymentAnalysis(?ElasticFilter $additionalFilters = null): array;
-
-    /**
-     * Get time analysis using Elasticsearch
-     */
-    public function getTimeAnalysis(?ElasticFilter $additionalFilters = null): array;
-
-    /**
-     * Get behavior analysis using Elasticsearch
-     */
-    public function getBehaviorAnalysis(?ElasticFilter $additionalFilters = null): array;
-
-    // ============ UTILITY METHODS ============
-    
-    /**
-     * Get workspace statistics summary
-     */
     public function getWorkspaceSummary(): array;
 
-    /**
-     * Check if transaction exists
-     */
-    public function transactionExists(string $uuid): bool;
-
-    /**
-     * Get transaction by UUID
-     */
-    public function getTransactionByUuid(string $uuid): ?ElasticTransaction;
-
-    /**
-     * Get transactions with filters
-     */
-    public function getTransactionsWithFilters(array $filters, int $limit = 100, int $offset = 0): array;
-
-    // ============ COMPARISON METHODS ============
-    
-    /**
-     * Compare periods (current vs previous)
-     */
-    public function comparePeriods(Carbon $previousStartDate, Carbon $previousEndDate): array;
-
-    /**
-     * Get growth rates
-     */
-    public function getGrowthRates(Carbon $previousStartDate, Carbon $previousEndDate): array;
-
-    // ============ TREND ANALYSIS ============
-    
-    /**
-     * Get spending trends
-     */
-    public function getSpendingTrends(int $periods = 12, string $interval = 'month'): array;
-
-    /**
-     * Get income trends
-     */
-    public function getIncomeTrends(int $periods = 12, string $interval = 'month'): array;
-
-    /**
-     * Get category trends
-     */
-    public function getCategoryTrends(int $categoryId, int $periods = 12, string $interval = 'month'): array;
-
-    // ============ BUDGET ANALYSIS ============
-    
-    /**
-     * Get budget vs actual comparison
-     */
-    public function getBudgetComparison(): array;
-
-    /**
-     * Get savings rate
-     */
-    public function getSavingsRate(): array;
-
-    /**
-     * Get expense ratios by category
-     */
-    public function getExpenseRatios(): array;
-
-    // ============ FORECASTING ============
-    
-    /**
-     * Predict future expenses based on historical data
-     */
-    public function predictExpenses(int $months = 3): array;
-
-    /**
-     * Predict future income based on historical data
-     */
-    public function predictIncome(int $months = 3): array;
-
-    // ============ REPORTING METHODS ============
-    
-    /**
-     * Generate comprehensive financial report
-     */
-    public function generateFinancialReport(): array;
-
-    /**
-     * Generate cash flow report
-     */
-    public function generateCashFlowReport(): array;
-
-    /**
-     * Generate category spending report
-     */
-    public function generateCategorySpendingReport(): array;
-
-    // ============ PERFORMANCE METRICS ============
-    
-    /**
-     * Get key performance indicators (KPIs)
-     */
-    public function getKPIs(): array;
-
-    /**
-     * Get financial health score
-     */
-    public function getFinancialHealthScore(): array;
-
-    /**
-     * Get spending efficiency metrics
-     */
-    public function getSpendingEfficiencyMetrics(): array;
-
-    // ============ PLANNED ENTRIES ANALYSIS ============
-    public function expensesByLabels(): array;
-
-    public function expensesByCategories(): array;
 }

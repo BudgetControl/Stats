@@ -2,13 +2,11 @@
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Budgetcontrol\Library\Entity\Entry;
-use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
-use Budgetcontrol\Stats\Facade\SearchService;
-use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\SavingRepoInterface;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
 
-class SavingRepository extends StatsRepository implements TransactionRepositoryInterface {
+class SavingRepository extends IncomingRepository implements SavingRepoInterface {
 
 
     // ============ TransactionRepositoryInterface Implementation ============

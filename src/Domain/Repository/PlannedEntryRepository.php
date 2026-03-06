@@ -6,13 +6,11 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 use Budgetcontrol\Library\Definition\Period;
 use Budgetcontrol\Library\Entity\Entry;
 use Budgetcontrol\Library\Model\PlannedEntry;
-use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
-use Budgetcontrol\Stats\Facade\SearchService;
-use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\PlannedEntryRepoInterface;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
 
-class PlannedEntryRepository extends StatsRepository implements TransactionRepositoryInterface {
+class PlannedEntryRepository extends BaseRepository implements PlannedEntryRepoInterface {
     
     /**
      * Retrieves the planned expenses.
@@ -63,34 +61,6 @@ class PlannedEntryRepository extends StatsRepository implements TransactionRepos
             ->sum('amount');
 
         return ['total' => (float) $total];
-    }
-
-    /**
-     * Retrieves the planned entries of the current period.
-     */
-    public function plannedOfPeriod(): array
-    {
-        $wsId = $this->wsId;
-        $startDate = $this->startDate->toAtomString();
-        $endDate = $this->endDate->toAtomString();
-
-        $filters = ElasticFilter::create()
-            ->setWorkspaceId($wsId)
-            ->setDateRange($startDate, $endDate)
-            ->setPlanned(true);
-
-        $agregator = ElasticAggregator::create($filters)
-            ->totalAmount();
-
-        $results = SearchService::aggregate($agregator);
-
-        if (empty($results)) {
-            return ['total' => 0.0];
-        }
-
-        return [
-            'total' => $results[0]->aggregations()->total ?? 0.0
-        ];
     }
 
     // ============ TransactionRepositoryInterface Implementation ============

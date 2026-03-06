@@ -2,11 +2,8 @@
 
 namespace Budgetcontrol\Stats\Services;
 
-use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
-use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
-use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
 use Illuminate\Support\Carbon;
-use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\DataValue;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\TotalInstallementValue;
 use Budgetcontrol\Stats\Domain\ValueObjects\StatsCalculator;
@@ -14,26 +11,29 @@ use Illuminate\Support\Facades\Log;
 
 class StatsService
 {
+    private StatsRepositoryInterface $repository;
 
-    private string $workspaceId;
-    private Carbon $startDate;
-    private Carbon $endDate;
-
-    public function __construct(string $wsId, Carbon $startDate, Carbon $endDate)
+    public function __construct(StatsRepositoryInterface $repository)
     {
-        $this->workspaceId = $wsId;
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
+        $this->repository = $repository;
+    }
+
+    public function setup(string $wsId, Carbon $startDate, Carbon $endDate)
+    {
+        $this->repository->setup($wsId, $startDate, $endDate);
+
+        return $this;
     }
 
     public function willArriveAtTheEndOfTheMonth(): StatsCalculator
     {
         try {
-            $expenses = $this->fetchRepositoryData(ExpensesRepository::class, 'statsExpenses');
-            $incoming = $this->fetchRepositoryData(IncomingRepository::class, 'statsIncoming');
-            $plannedEntries = $this->fetchRepositoryData(PlannedEntryRepository::class, 'plannedOfPeriod');
-            $creditCards = $this->fetchRepositoryData(StatsRepository::class, 'currentInstallmentValues');
-            $walletsBalance = $this->fetchRepositoryData(StatsRepository::class, 'total');
+
+            $expenses = $this->repository->statsExpenses();
+            $incoming = $this->repository->statsIncoming();
+            $plannedEntries = $this->repository->plannedOfPeriod();
+            $creditCards = $this->repository->currentInstallmentValues();
+            $walletsBalance = $this->repository->total();
 
             $installementValues = new TotalInstallementValue($creditCards);
 
@@ -51,26 +51,78 @@ class StatsService
         }
     }
 
-    /**
-     * Helper method to fetch data from a repository.
-     *
-     * @param string $repositoryClass The repository class name.
-     * @param string $method The method to call on the repository.
-     * @return array The data fetched from the repository.
-     * @throws \RuntimeException If the repository or method is invalid.
-     */
-    private function fetchRepositoryData(string $repositoryClass, string $method): \Illuminate\Database\Eloquent\Collection|array
+    public function statsExpenses(): array
     {
-        if (!class_exists($repositoryClass)) {
-            throw new \RuntimeException("Repository class $repositoryClass does not exist.");
-        }
+        return $this->repository->statsExpenses();
+    }
 
-        $repository = new $repositoryClass($this->workspaceId, $this->startDate, $this->endDate);
+    public function statsIncoming(): array
+    {
+        return $this->repository->statsIncoming();
+    }
 
-        if (!method_exists($repository, $method)) {
-            throw new \RuntimeException("Method $method does not exist in $repositoryClass.");
-        }
+    public function statsDebits(): array
+    {
+        return $this->repository->statsDebits();
+    }
 
-        return $repository->$method();
+    public function statsSevings(): array
+    {
+        return $this->repository->statsSavings();
+    }
+
+    public function totalNegativeStatsDebits(): array
+    {
+        return $this->repository->totalNegativeStatsDebits();
+    }
+
+    public function totalPositiveStatsDebits(): array
+    {
+        return $this->repository->totalPositiveStatsDebits();
+    }
+
+    public function total(): array
+    {
+        return $this->repository->total();
+    }
+
+    public function wallets(): array
+    {
+        return $this->repository->wallets();
+    }
+
+    public function health(): array
+    {
+        return $this->repository->health();
+    }
+
+    public function statsByFilters(array $options): array
+    {
+        return $this->repository->statsByFilters($options);
+    }
+
+    public function getPlanedMonthlyExpenses(): array
+    {
+        return $this->repository->getPlanedMonthlyExpenses();
+    }
+
+    public function loanOfCreditCards(): array
+    {
+        return $this->repository->loanOfCreditCards();
+    }
+
+    public function plannedExpenses(): array
+    {
+        return $this->repository->plannedExpenses();
+    }
+
+    public function getPlanedWeeklyExpenses(): array
+    {
+        return $this->repository->getPlanedWeeklyExpenses();
+    }
+
+    public function getPlanedDailyExpenses(): array
+    {
+        return $this->repository->getPlanedDailyExpenses();
     }
 }
