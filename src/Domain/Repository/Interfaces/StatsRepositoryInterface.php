@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 namespace Budgetcontrol\Stats\Domain\Repository\Interfaces;
 
-use Carbon\Carbon;
-use Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory;
 use Budgetcontrol\Stats\Domain\Entity\ElasticTransaction;
+use Budgetcontrol\Stats\Domain\ValueObjects\Stats\ExpensesCategory;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 
 interface StatsRepositoryInterface
 {
@@ -304,4 +305,16 @@ interface StatsRepositoryInterface
     public function expensesByLabels(): array;
 
     public function expensesByCategories(): array;
+
+    /**
+     * Retrieves the planned entries of the current period.
+     */
+    public function plannedOfPeriod(): array;
+
+    /**
+     * Retrieves the installment values.
+     *
+     * @return array The installment values.
+     */
+    public function currentInstallmentValues(): array|Collection;
 }

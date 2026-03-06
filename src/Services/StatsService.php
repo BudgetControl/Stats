@@ -4,6 +4,7 @@ namespace Budgetcontrol\Stats\Services;
 
 use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
 use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
 use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
 use Illuminate\Support\Carbon;
 use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
@@ -14,26 +15,29 @@ use Illuminate\Support\Facades\Log;
 
 class StatsService
 {
+    private StatsRepositoryInterface $repository;
 
-    private string $workspaceId;
-    private Carbon $startDate;
-    private Carbon $endDate;
-
-    public function __construct(string $wsId, Carbon $startDate, Carbon $endDate)
+    public function __construct(StatsRepositoryInterface $repository)
     {
-        $this->workspaceId = $wsId;
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
+        $this->repository = $repository;
+    }
+
+    public function create(string $wsId, Carbon $startDate, Carbon $endDate)
+    {
+        $this->repository->setup($wsId, $startDate, $endDate);
+
+        return $this;
     }
 
     public function willArriveAtTheEndOfTheMonth(): StatsCalculator
     {
         try {
-            $expenses = $this->fetchRepositoryData(ExpensesRepository::class, 'statsExpenses');
-            $incoming = $this->fetchRepositoryData(IncomingRepository::class, 'statsIncoming');
-            $plannedEntries = $this->fetchRepositoryData(PlannedEntryRepository::class, 'plannedOfPeriod');
-            $creditCards = $this->fetchRepositoryData(StatsRepository::class, 'currentInstallmentValues');
-            $walletsBalance = $this->fetchRepositoryData(StatsRepository::class, 'total');
+
+            $expenses = $this->repository->statsExpenses();
+            $incoming = $this->repository->statsIncoming();
+            $plannedEntries = $this->repository->plannedOfPeriod();
+            $creditCards = $this->repository->currentInstallmentValues();
+            $walletsBalance = $this->repository->total();
 
             $installementValues = new TotalInstallementValue($creditCards);
 
@@ -49,28 +53,5 @@ class StatsService
             Log::error($e->getMessage());
             throw $e;
         }
-    }
-
-    /**
-     * Helper method to fetch data from a repository.
-     *
-     * @param string $repositoryClass The repository class name.
-     * @param string $method The method to call on the repository.
-     * @return array The data fetched from the repository.
-     * @throws \RuntimeException If the repository or method is invalid.
-     */
-    private function fetchRepositoryData(string $repositoryClass, string $method): \Illuminate\Database\Eloquent\Collection|array
-    {
-        if (!class_exists($repositoryClass)) {
-            throw new \RuntimeException("Repository class $repositoryClass does not exist.");
-        }
-
-        $repository = new $repositoryClass($this->workspaceId, $this->startDate, $this->endDate);
-
-        if (!method_exists($repository, $method)) {
-            throw new \RuntimeException("Method $method does not exist in $repositoryClass.");
-        }
-
-        return $repository->$method();
     }
 }

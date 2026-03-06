@@ -65,34 +65,6 @@ class PlannedEntryRepository extends StatsRepository implements TransactionRepos
         return ['total' => (float) $total];
     }
 
-    /**
-     * Retrieves the planned entries of the current period.
-     */
-    public function plannedOfPeriod(): array
-    {
-        $wsId = $this->wsId;
-        $startDate = $this->startDate->toAtomString();
-        $endDate = $this->endDate->toAtomString();
-
-        $filters = ElasticFilter::create()
-            ->setWorkspaceId($wsId)
-            ->setDateRange($startDate, $endDate)
-            ->setPlanned(true);
-
-        $agregator = ElasticAggregator::create($filters)
-            ->totalAmount();
-
-        $results = SearchService::aggregate($agregator);
-
-        if (empty($results)) {
-            return ['total' => 0.0];
-        }
-
-        return [
-            'total' => $results[0]->aggregations()->total ?? 0.0
-        ];
-    }
-
     // ============ TransactionRepositoryInterface Implementation ============
 
     public function getStats(): array

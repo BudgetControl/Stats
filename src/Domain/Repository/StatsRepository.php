@@ -9,10 +9,11 @@ use Budgetcontrol\Stats\Domain\Entity\ElasticTransaction;
 use Budgetcontrol\Stats\Domain\Model\Wallet;
 use Budgetcontrol\Stats\Domain\Model\Workspace;
 use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
+use Budgetcontrol\Stats\Facade\SearchService;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
-use Budgetcontrol\Stats\Facade\SearchService;
+use Illuminate\Database\Eloquent\Collection;
 use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 class StatsRepository implements StatsRepositoryInterface
@@ -160,12 +161,42 @@ class StatsRepository implements StatsRepositoryInterface
         return $result;
     }
 
+
+
+    /**
+     * Retrieves the planned entries of the current period.
+     */
+    public function plannedOfPeriod(): array
+    {
+        $wsId = $this->wsId;
+        $startDate = $this->startDate->toAtomString();
+        $endDate = $this->endDate->toAtomString();
+
+        $filters = ElasticFilter::create()
+            ->setWorkspaceId($wsId)
+            ->setDateRange($startDate, $endDate)
+            ->setPlanned(true);
+
+        $agregator = ElasticAggregator::create($filters)
+            ->totalAmount();
+
+        $results = SearchService::aggregate($agregator);
+
+        if (empty($results)) {
+            return ['total' => 0.0];
+        }
+
+        return [
+            'total' => $results[0]->aggregations()->total ?? 0.0
+        ];
+    }
+
     /**
      * Retrieves the installment values.
      *
      * @return array The installment values.
      */
-    public function currentInstallmentValues()
+    public function currentInstallmentValues(): array|Collection
     {
         $wsId = $this->wsId;
 
