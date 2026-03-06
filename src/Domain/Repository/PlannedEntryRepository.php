@@ -6,13 +6,11 @@ namespace Budgetcontrol\Stats\Domain\Repository;
 use Budgetcontrol\Library\Definition\Period;
 use Budgetcontrol\Library\Entity\Entry;
 use Budgetcontrol\Library\Model\PlannedEntry;
-use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
-use Budgetcontrol\Stats\Facade\SearchService;
-use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\PlannedEntryRepoInterface;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
 
-class PlannedEntryRepository extends StatsRepository implements TransactionRepositoryInterface {
+class PlannedEntryRepository extends BaseRepository implements PlannedEntryRepoInterface {
     
     /**
      * Retrieves the planned expenses.

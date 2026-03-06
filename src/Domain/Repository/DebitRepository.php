@@ -5,13 +5,11 @@ use Budgetcontrol\Library\Entity\Entry;
 use Budgetcontrol\Library\Entity\Wallet as EntityWallet;
 use Budgetcontrol\Library\Model\Payee;
 use Budgetcontrol\Stats\Domain\Model\Wallet;
-use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
-use Budgetcontrol\Stats\Facade\SearchService;
-use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\DebitRepoInterface;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
 
-class DebitRepository extends StatsRepository implements TransactionRepositoryInterface {
+class DebitRepository extends PlannedEntryRepository implements DebitRepoInterface {
 
     /**
      * Calculate the total amount of negative debits.

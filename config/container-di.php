@@ -8,7 +8,6 @@ $controllers = [
     \Budgetcontrol\Stats\Controller\ApplePieChartController::class => \Budgetcontrol\Stats\Domain\Repository\ExpensesRepository::class,
     \Budgetcontrol\Stats\Controller\BarChartController::class => \Budgetcontrol\Stats\Domain\Repository\ExpensesRepository::class,
     \Budgetcontrol\Stats\Controller\LineChartController::class => \Budgetcontrol\Stats\Domain\Repository\StatsRepository::class,
-    \Budgetcontrol\Stats\Controller\StatsController::class => \Budgetcontrol\Stats\Domain\Repository\StatsRepository::class,
     \Budgetcontrol\Stats\Controller\TableChartController::class => \Budgetcontrol\Stats\Domain\Repository\StatsRepository::class,
 ];
 
@@ -21,3 +20,13 @@ foreach ($controllers as $controller => $repository) {
         return new $controller($statsRepository);
     });
 }
+
+$container->set(\Budgetcontrol\Stats\Services\StatsService::class, function ($c) {
+    $repository = $c->get(\Budgetcontrol\Stats\Domain\Repository\StatsRepository::class);
+    return new \Budgetcontrol\Stats\Services\StatsService($repository);
+});
+
+$container->get(\Budgetcontrol\Stats\Controller\StatsController::class, function ($c) {
+    $service = $c->get(\Budgetcontrol\Stats\Services\StatsService::class);
+    return new \Budgetcontrol\Stats\Controller\StatsController($service);
+});

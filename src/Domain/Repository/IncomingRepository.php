@@ -2,13 +2,13 @@
 namespace Budgetcontrol\Stats\Domain\Repository;
 
 use Budgetcontrol\Library\Entity\Entry;
-use Budgetcontrol\Stats\Domain\Repository\Interfaces\TransactionRepositoryInterface;
+use Budgetcontrol\Stats\Domain\Repository\Interfaces\Stats\IncomingRepoInterface;
 use Budgetcontrol\Stats\Facade\SearchService;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Carbon\Carbon;
 
-class IncomingRepository extends StatsRepository implements TransactionRepositoryInterface {
+class IncomingRepository extends ExpensesRepository implements IncomingRepoInterface {
     
 
     public function incomingByCategory(?int $categoryId = null): array

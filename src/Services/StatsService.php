@@ -2,12 +2,8 @@
 
 namespace Budgetcontrol\Stats\Services;
 
-use Budgetcontrol\Stats\Domain\Repository\ExpensesRepository;
-use Budgetcontrol\Stats\Domain\Repository\IncomingRepository;
 use Budgetcontrol\Stats\Domain\Repository\Interfaces\StatsRepositoryInterface;
-use Budgetcontrol\Stats\Domain\Repository\PlannedEntryRepository;
 use Illuminate\Support\Carbon;
-use Budgetcontrol\Stats\Domain\Repository\StatsRepository;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\DataValue;
 use Budgetcontrol\Stats\Domain\ValueObjects\Stats\TotalInstallementValue;
 use Budgetcontrol\Stats\Domain\ValueObjects\StatsCalculator;
@@ -22,7 +18,7 @@ class StatsService
         $this->repository = $repository;
     }
 
-    public function create(string $wsId, Carbon $startDate, Carbon $endDate)
+    public function setup(string $wsId, Carbon $startDate, Carbon $endDate)
     {
         $this->repository->setup($wsId, $startDate, $endDate);
 
@@ -53,5 +49,80 @@ class StatsService
             Log::error($e->getMessage());
             throw $e;
         }
+    }
+
+    public function statsExpenses(): array
+    {
+        return $this->repository->statsExpenses();
+    }
+
+    public function statsIncoming(): array
+    {
+        return $this->repository->statsIncoming();
+    }
+
+    public function statsDebits(): array
+    {
+        return $this->repository->statsDebits();
+    }
+
+    public function statsSevings(): array
+    {
+        return $this->repository->statsSavings();
+    }
+
+    public function totalNegativeStatsDebits(): array
+    {
+        return $this->repository->totalNegativeStatsDebits();
+    }
+
+    public function totalPositiveStatsDebits(): array
+    {
+        return $this->repository->totalPositiveStatsDebits();
+    }
+
+    public function total(): array
+    {
+        return $this->repository->total();
+    }
+
+    public function wallets(): array
+    {
+        return $this->repository->wallets();
+    }
+
+    public function health(): array
+    {
+        return $this->repository->health();
+    }
+
+    public function statsByFilters(array $options): array
+    {
+        return $this->repository->statsByFilters($options);
+    }
+
+    public function getPlanedMonthlyExpenses(): array
+    {
+        return $this->repository->getPlanedMonthlyExpenses();
+    }
+
+    public function loanOfCreditCards(): array
+    {
+        return $this->repository->loanOfCreditCards();
+    }
+
+    public function plannedExpenses(): array
+    {
+        return $this->repository->plannedExpenses();
+    }
+
+    public function getPlanedWeeklyExpenses(): array
+    {
+        return $this->repository->getPlanedWeeklyExpenses();
+    }
+
+    public function getPlanedDailyExpenses(): array
+    {
+        return $this->repository->getPlanedDailyExpenses();
     }
 }
