@@ -7,7 +7,7 @@ use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 
 interface PlannedEntryRepoInterface {
 
-    public function setup(string $wsId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate): self;
+    public function setup(string $wsId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate): static;
     
     /**
      * Retrieves the planned expenses.

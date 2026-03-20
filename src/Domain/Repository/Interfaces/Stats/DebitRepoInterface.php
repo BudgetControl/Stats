@@ -6,7 +6,7 @@ use Carbon\Carbon;
 
 interface DebitRepoInterface {
 
-    public function setup(string $wsId, Carbon $startDate, Carbon $endDate): self;
+    public function setup(string $wsId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate): static;
 
     /**
      * Calculate the total amount of negative debits.

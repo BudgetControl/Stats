@@ -132,7 +132,7 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
             ->setPlanned(true);
 
         $agregator = ElasticAggregator::create($filters)->totalAmount();
-        $results = SearchService::aggregate($agregator);
+        $results = $this->client->aggregate($agregator);
         $plannedTotal = !empty($results) ? ($results[0]->aggregations()->total ?? 0.0) : 0.0;
 
         $result = new \stdClass();

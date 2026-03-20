@@ -42,7 +42,5 @@ Facade::setFacadeApplication([
     'log' => $logger,
     'date' => new Date(),
     'crypt' => $crypt,
-    'bc-math' => new BcMathNumber(0),
-    'elasticsearch' => $elasticsearch,
-    'search-service' => new \Budgetcontrol\Stats\Services\SearchService($elasticsearch),
+    'bc-math' => new BcMathNumber(0)
 ]);

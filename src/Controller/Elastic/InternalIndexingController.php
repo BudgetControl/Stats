@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Budgetcontrol\Stats\Controller\Elastic;
 
 use Budgetcontrol\Library\Model\Entry;
-use Budgetcontrol\Stats\Facade\ElasticSearch;
 use BudgetcontrolLibs\ElasticSearch\Services\Clients\ElasticSearchClient;
 use Illuminate\Support\Facades\Log;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -16,9 +15,9 @@ class InternalIndexingController
     private const TRANSACTIONS_NUMBER = 1000;
     private ElasticSearchClient $elasticSearchClient;
 
-    public function __construct()
+    public function __construct(ElasticSearchClient $client)
     {
-        $this->elasticSearchClient = ElasticSearch::getInstance();
+        $this->elasticSearchClient = $client;
     }
 
     /**
@@ -94,7 +93,7 @@ class InternalIndexingController
         try {
                 $entries->chunk(self::TRANSACTIONS_NUMBER, function ($entries) {
                     // SEND TO ELASTICSEARCH
-                    $elastic = new Indexer(ElasticSearch::getInstance());
+                    $elastic = new Indexer($this->elasticSearchClient);
                     $elastic->bulkIndexTransactions($entries);
                 });
 

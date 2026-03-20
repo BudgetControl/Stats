@@ -5,7 +5,7 @@ use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 
 interface SavingRepoInterface {
 
-    public function setup(string $wsId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate): self;
+    public function setup(string $wsId, \Carbon\Carbon $startDate, \Carbon\Carbon $endDate): static;
 
     // ============ TransactionRepositoryInterface Implementation ============
 
