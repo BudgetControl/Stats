@@ -2,6 +2,7 @@
     "name": "budgetcontrol/stats",
     "description": "defines the dependencies required for a PHP microservice stats in a Budget application",
     "type": "none",
+    "version": "1.3.7",
     "repositories": {
         "source": {
             "type": "vcs",
@@ -57,11 +58,11 @@
         "nesbot/carbon": "^3.2",
         "logtail/monolog-logtail": "^3.1",
         "mlab/math-percentage": "v1.0.*",
-        "budgetcontrol/cryptable": "^v0.1",
-        "budgetcontrol/library": "^v1.3",
-        "bref/bref": "~2.4.1",
         "budgetcontrol/elasticsearch": "dev-main",
-        "php-di/php-di": "~7.1.1"
+        "php-di/php-di": "~7.1.1",
+        "budgetcontrol/cryptable": "^v0.2.1",
+        "bref/bref": "~2.4.1",
+        "budgetcontrol/library": "^1.5"
     },
     "require-dev": {
         "nikic/php-parser": "^5.0",

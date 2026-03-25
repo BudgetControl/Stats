@@ -16,6 +16,10 @@ use Budgetcontrol\Stats\Facade\SearchService;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticAggregator;
 use BudgetcontrolLibs\ElasticSearch\Entities\Elastic\ElasticFilter;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Capsule\Manager as DB;
+use Budgetcontrol\Stats\Domain\Model\Workspace;
+use Carbon\Carbon;
+use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 class StatsRepository extends SavingRepository implements StatsRepositoryInterface, IncomingRepoInterface, ExpensesRepoInterface, DebitRepoInterface, PlannedEntryRepoInterface
 {
@@ -24,6 +28,7 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
      * Retrieves the total stats.
      *
      * @return array The total stats.
+     * @deprecated this function will be removed to the next release
      */
     public function statsTotal(): array
     {
@@ -51,12 +56,18 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
      */
     public function total(): array
     {
-        $total = Wallet::where('workspace_id', $this->wsId)
-            ->where('installement', false)
-            ->whereNull('deleted_at')
-            ->where('archived', false)
-            ->where('exclude_from_stats', false)
-            ->sum('balance');
+        $wallets = $this->wallets();
+        $walletIds = array_map(function($wallet) {
+            return $wallet['id'];
+        }, $wallets);
+
+        $query = "
+            SELECT COALESCE(SUM(wallet_balance), 0) AS total_balance
+            FROM aggregated_balances
+            WHERE id IN (" . implode(',', $walletIds) . ");
+        ";
+
+        $result = DB::select($query);
 
         return [
             'total' => (float) $total
@@ -66,17 +77,22 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
     /**
      * Retrieves the wallets from the repository.
      *
+     * @param \Budgetcontrol\Library\Entity\Wallet|null $walletType The type of wallet to filter by.
      * @return array An array of wallets.
      */
-    public function wallets()
+    public function wallets(EntityWallet $walletType = null)
     {
         $wsId = $this->wsId;
 
         $wallets = Wallet::with('currency')->where('workspace_id', $wsId)
             ->where('deleted_at', null)
-            ->where('archived', false)
-            ->get();
+            ->where('archived', false);
 
+        if (!is_null($walletType)) {
+            $wallets = $wallets->where('type', $walletType->value);
+        }
+
+        $wallets = $wallets->get();
         return $wallets->toArray();
     }
 
@@ -87,15 +103,11 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
      */
     public function health()
     {
-        $total = Wallet::where('workspace_id', $this->wsId)
-            ->whereNull('deleted_at')
-            ->where('archived', false)
-            ->where('exclude_from_stats', false)
-            ->sum('balance');
 
+        $walletsBalance = $this->total();
         $totalPlanned = $this->totalPlannedOfCurrentMonth();
 
-        $total = BigNumber::sum($total, $totalPlanned['total'])->toFloat();
+        $total = BigNumber::sum($walletsBalance['total'], $totalPlanned['total'])->toFloat();
         return [
             'total' => $total
         ];
@@ -105,6 +117,7 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
      * Calculates the total with planned value for the current month.
      *
      * @return \stdClass The total value with planned for the current month.
+     * TODO: refactor this function with the new agregated view
      */
     public function totalWithPlannedOfCurrentMonth(): \stdClass
     {
@@ -154,13 +167,42 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
         $startDate = $this->startDate->toAtomString();
         $endDate = $this->endDate->toAtomString();
 
-        $filters = ElasticFilter::create()
-            ->setWorkspaceId($wsId)
-            ->setDateRange($startDate, $endDate)
-            ->setPlanned(true);
-
-        $agregator = ElasticAggregator::create($filters)
-            ->totalAmount();
+        $query = "
+        SELECT
+                COALESCE(SUM(
+                    CASE 
+                        WHEN a.installement = true AND ab.wallet_balance < 0 
+                        THEN a.installement_value
+                    END
+                ), 0) AS installement_balance,
+                COALESCE(SUM(
+                    CASE 
+                        WHEN a.installement = false 
+                        THEN ab.wallet_balance
+                    END
+                ), 0) AS balance_without_installement,
+                COALESCE(SUM(e.amount), 0) AS planned_amount_total
+            FROM wallets a
+            LEFT JOIN aggregated_balances ab ON ab.account_id = a.id
+            LEFT JOIN (
+                SELECT 
+                    account_id,
+                    SUM(amount) AS amount
+                FROM entries
+                WHERE planned = true
+                AND EXTRACT(MONTH FROM date_time) = EXTRACT(MONTH FROM CURRENT_DATE)
+                AND EXTRACT(YEAR FROM date_time) = EXTRACT(YEAR FROM CURRENT_DATE)
+                AND confirmed = true
+                AND deleted_at IS NULL
+                AND exclude_from_stats = false
+                AND workspace_id = ?
+                GROUP BY account_id
+            ) AS e ON a.id = e.account_id
+            WHERE a.deleted_at IS NULL
+            AND a.archived = false
+            AND a.exclude_from_stats = false
+            AND a.workspace_id = ?;
+        ";
 
         $results = SearchService::aggregate($agregator);
 
@@ -196,7 +238,7 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
             return [];
         }
 
-        return $wallets;
+        return $wallets->toArray();
     }
 
 
@@ -342,15 +384,29 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
      */
     public function loanOfCreditCards()
     {
-        $walletsType = [EntityWallet::creditCard->value, EntityWallet::creditCardRevolving->value];
+        $wsId = $this->wsId;
 
-        return Wallet::where('workspace_id', $this->wsId)
-            ->whereNull('deleted_at')
-            ->where('exclude_from_stats', false)
-            ->where('archived', false)
-            ->whereIn('type', $walletsType)
-            ->where('balance', '<', 0)
-            ->get(['invoice_date', 'installement_value', 'balance']);
+        $walletsCreditCardsRevolving = $this->wallets(EntityWallet::creditCardRevolving);
+        $walletCreditCard = $this->wallets(EntityWallet::creditCard);
+        $wallets = array_merge($walletsCreditCardsRevolving, $walletCreditCard);
+
+        $query = "
+            SELECT 
+                ab.invoice_date,
+                ab.installement_value,
+                ab.wallet_balance
+            FROM 
+                aggregated_balances AS ab
+            WHERE 
+                ab.wallet_balance < 0
+                AND ab.wallet_id IN (" . implode(',', array_map(function($wallet) {
+                    return $wallet['id'];
+                }, $wallets)) . ")
+        ";
+
+        $result = DB::select($query);
+
+        return $result;
     }
 
     /**
@@ -358,14 +414,8 @@ class StatsRepository extends SavingRepository implements StatsRepositoryInterfa
      *
      * @return \stdClass
      */
-    public function plannedExpenses(): \stdClass
-    {
-        $filters = ElasticFilter::create()
-            ->setWorkspaceId($this->wsId)
-            ->setMonth(now()->month)
-            ->setYear(now()->year)
-            ->setPlanned(true)
-            ->setType(Entry::expenses->value);
+    public function plannedExpenses(): \stdClass {
+        $wsId = $this->wsId;
 
         $agregator = ElasticAggregator::create($filters)->totalAmount();
         $results = SearchService::aggregate($agregator);
