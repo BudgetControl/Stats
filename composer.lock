@@ -147,16 +147,16 @@
         },
         {
             "name": "budgetcontrol/cryptable",
-            "version": "v0.1",
+            "version": "v0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/BudgetControl/LibsCryptable.git",
-                "reference": "12d139566fd5af05c961c99b307dbb490b97e071"
+                "reference": "3895189f0df0d98377183b4748e747513371e5ce"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/BudgetControl/LibsCryptable/zipball/12d139566fd5af05c961c99b307dbb490b97e071",
-                "reference": "12d139566fd5af05c961c99b307dbb490b97e071",
+                "url": "https://api.github.com/repos/BudgetControl/LibsCryptable/zipball/3895189f0df0d98377183b4748e747513371e5ce",
+                "reference": "3895189f0df0d98377183b4748e747513371e5ce",
                 "shasum": ""
             },
             "require": {
@@ -185,10 +185,10 @@
             ],
             "description": "The cryptable package",
             "support": {
-                "source": "https://github.com/BudgetControl/LibsCryptable/tree/v0.1",
+                "source": "https://github.com/BudgetControl/LibsCryptable/tree/v0.2.1",
                 "issues": "https://github.com/BudgetControl/LibsCryptable/issues"
             },
-            "time": "2024-09-13T12:32:30+00:00"
+            "time": "2025-08-12T10:12:42+00:00"
         },
         {
             "name": "budgetcontrol/elasticsearch",
@@ -196,16 +196,16 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/BudgetControl/ElasticSearchService.git",
-                "reference": "a7944a79f9ba7ac08805df367a22c1f5b2653407"
+                "reference": "8a79138dd5748abdf765f9422619aef12df27f19"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/BudgetControl/ElasticSearchService/zipball/a7944a79f9ba7ac08805df367a22c1f5b2653407",
-                "reference": "a7944a79f9ba7ac08805df367a22c1f5b2653407",
+                "url": "https://api.github.com/repos/BudgetControl/ElasticSearchService/zipball/8a79138dd5748abdf765f9422619aef12df27f19",
+                "reference": "8a79138dd5748abdf765f9422619aef12df27f19",
                 "shasum": ""
             },
             "require": {
-                "budgetcontrol/library": "~1.4.6",
+                "budgetcontrol/library": "^1.5",
                 "elasticsearch/elasticsearch": "~8.19",
                 "php": "^8.1"
             },
@@ -235,24 +235,24 @@
                 "source": "https://github.com/BudgetControl/ElasticSearchService/tree/main",
                 "issues": "https://github.com/BudgetControl/ElasticSearchService/issues"
             },
-            "time": "2026-03-06T16:16:08+00:00"
+            "time": "2026-03-25T14:23:57+00:00"
         },
         {
             "name": "budgetcontrol/library",
-            "version": "v1.4.6",
+            "version": "v1.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/BudgetControl/Library.git",
-                "reference": "66867333337e2c0aa28a751d15aaec49dff5ab07"
+                "reference": "4a64638fe48807ca8709bfa9df4ade783fe361e8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/BudgetControl/Library/zipball/66867333337e2c0aa28a751d15aaec49dff5ab07",
-                "reference": "66867333337e2c0aa28a751d15aaec49dff5ab07",
+                "url": "https://api.github.com/repos/BudgetControl/Library/zipball/4a64638fe48807ca8709bfa9df4ade783fe361e8",
+                "reference": "4a64638fe48807ca8709bfa9df4ade783fe361e8",
                 "shasum": ""
             },
             "require": {
-                "budgetcontrol/cryptable": "^v0.1",
+                "budgetcontrol/cryptable": "^v0.2",
                 "illuminate/database": "11.19",
                 "ramsey/uuid": "^4.7",
                 "webit/bcmath": "^2.0"
@@ -270,9 +270,9 @@
                 }
             ],
             "support": {
-                "source": "https://github.com/BudgetControl/Library/tree/v1.4.6"
+                "source": "https://github.com/BudgetControl/Library/tree/v1.5.1"
             },
-            "time": "2025-07-31T07:21:52+00:00"
+            "time": "2026-03-25T09:32:16+00:00"
         },
         {
             "name": "cakephp/chronos",
@@ -741,12 +741,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/dbal.git",
-                "reference": "0b12e9aec10501cd3f7b2f36efd24fc397adff37"
+                "reference": "748125cc3afee13f425d8a736f7fb180af5fa72c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/dbal/zipball/0b12e9aec10501cd3f7b2f36efd24fc397adff37",
-                "reference": "0b12e9aec10501cd3f7b2f36efd24fc397adff37",
+                "url": "https://api.github.com/repos/doctrine/dbal/zipball/748125cc3afee13f425d8a736f7fb180af5fa72c",
+                "reference": "748125cc3afee13f425d8a736f7fb180af5fa72c",
                 "shasum": ""
             },
             "require": {
@@ -839,7 +839,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-26T12:12:38+00:00"
+            "time": "2026-03-19T16:59:56+00:00"
         },
         {
             "name": "doctrine/deprecations",
@@ -1043,12 +1043,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/elastic/elasticsearch-php.git",
-                "reference": "5cdbed95efe5f6de9ce47dcbf046e3a689867544"
+                "reference": "410404ce56cba7a929055aad73a47f3d47593ef2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/elastic/elasticsearch-php/zipball/5cdbed95efe5f6de9ce47dcbf046e3a689867544",
-                "reference": "5cdbed95efe5f6de9ce47dcbf046e3a689867544",
+                "url": "https://api.github.com/repos/elastic/elasticsearch-php/zipball/410404ce56cba7a929055aad73a47f3d47593ef2",
+                "reference": "410404ce56cba7a929055aad73a47f3d47593ef2",
                 "shasum": ""
             },
             "require": {
@@ -1093,7 +1093,7 @@
                 "issues": "https://github.com/elastic/elasticsearch-php/issues",
                 "source": "https://github.com/elastic/elasticsearch-php/tree/8.19"
             },
-            "time": "2026-02-16T10:19:05+00:00"
+            "time": "2026-03-23T11:44:14+00:00"
         },
         {
             "name": "fig/http-message-util",
@@ -1158,12 +1158,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/GrahamCampbell/Result-Type.git",
-                "reference": "e01f4a821471308ba86aa202fed6698b6b695e3b"
+                "reference": "806fe8441c34bed1318bc779e2a510e6555f2169"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/GrahamCampbell/Result-Type/zipball/e01f4a821471308ba86aa202fed6698b6b695e3b",
-                "reference": "e01f4a821471308ba86aa202fed6698b6b695e3b",
+                "url": "https://api.github.com/repos/GrahamCampbell/Result-Type/zipball/806fe8441c34bed1318bc779e2a510e6555f2169",
+                "reference": "806fe8441c34bed1318bc779e2a510e6555f2169",
                 "shasum": ""
             },
             "require": {
@@ -1171,7 +1171,7 @@
                 "phpoption/phpoption": "^1.9.5"
             },
             "require-dev": {
-                "phpunit/phpunit": "^8.5.41 || ^9.6.22 || ^10.5.45 || ^11.5.7"
+                "phpunit/phpunit": "^8.5.52 || ^9.6.34 || ^10.5.63 || ^11.5.55 || ^12.5.14"
             },
             "default-branch": true,
             "type": "library",
@@ -1213,7 +1213,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-12-27T19:43:20+00:00"
+            "time": "2026-03-19T18:33:23+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -2790,7 +2790,7 @@
         },
         {
             "name": "open-telemetry/api",
-            "version": "dev-main",
+            "version": "1.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/opentelemetry-php/api.git",
@@ -2811,7 +2811,6 @@
             "conflict": {
                 "open-telemetry/sdk": "<=1.11"
             },
-            "default-branch": true,
             "type": "library",
             "extra": {
                 "spi": {
@@ -2861,16 +2860,16 @@
         },
         {
             "name": "open-telemetry/context",
-            "version": "1.4.0",
+            "version": "1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/opentelemetry-php/context.git",
-                "reference": "d4c4470b541ce72000d18c339cfee633e4c8e0cf"
+                "reference": "3c414b246e0dabb7d6145404e6a5e4536ca18d07"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/opentelemetry-php/context/zipball/d4c4470b541ce72000d18c339cfee633e4c8e0cf",
-                "reference": "d4c4470b541ce72000d18c339cfee633e4c8e0cf",
+                "url": "https://api.github.com/repos/opentelemetry-php/context/zipball/3c414b246e0dabb7d6145404e6a5e4536ca18d07",
+                "reference": "3c414b246e0dabb7d6145404e6a5e4536ca18d07",
                 "shasum": ""
             },
             "require": {
@@ -2912,11 +2911,11 @@
             ],
             "support": {
                 "chat": "https://app.slack.com/client/T08PSQ7BQ/C01NFPCV44V",
-                "docs": "https://opentelemetry.io/docs/php",
+                "docs": "https://opentelemetry.io/docs/languages/php",
                 "issues": "https://github.com/open-telemetry/opentelemetry-php/issues",
                 "source": "https://github.com/open-telemetry/opentelemetry-php"
             },
-            "time": "2025-09-19T00:05:49+00:00"
+            "time": "2025-10-19T06:44:33+00:00"
         },
         {
             "name": "php-di/invoker",
@@ -5801,19 +5800,19 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/property-info.git",
-                "reference": "6396b28f44d7c28b209a1bd73acf0dd985a0a4ef"
+                "reference": "02501d75fd834345da3ecdd8e3200ced39e370f8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/property-info/zipball/6396b28f44d7c28b209a1bd73acf0dd985a0a4ef",
-                "reference": "6396b28f44d7c28b209a1bd73acf0dd985a0a4ef",
+                "url": "https://api.github.com/repos/symfony/property-info/zipball/02501d75fd834345da3ecdd8e3200ced39e370f8",
+                "reference": "02501d75fd834345da3ecdd8e3200ced39e370f8",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.2",
                 "symfony/deprecation-contracts": "^2.5|^3",
                 "symfony/string": "^6.4|^7.0|^8.0",
-                "symfony/type-info": "~7.3.10|^7.4.4|^8.0.4"
+                "symfony/type-info": "^7.4.7|^8.0.7"
             },
             "conflict": {
                 "phpdocumentor/reflection-docblock": "<5.2|>=7",
@@ -5883,7 +5882,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-13T11:51:31+00:00"
+            "time": "2026-03-04T15:53:26+00:00"
         },
         {
             "name": "symfony/serializer",
@@ -5891,12 +5890,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/serializer.git",
-                "reference": "83c3cbd6dcb96c1dbe197499a0714f8dceb0f274"
+                "reference": "508be04fb6013dfbe80c51a57df4afa7b06ee88b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/serializer/zipball/83c3cbd6dcb96c1dbe197499a0714f8dceb0f274",
-                "reference": "83c3cbd6dcb96c1dbe197499a0714f8dceb0f274",
+                "url": "https://api.github.com/repos/symfony/serializer/zipball/508be04fb6013dfbe80c51a57df4afa7b06ee88b",
+                "reference": "508be04fb6013dfbe80c51a57df4afa7b06ee88b",
                 "shasum": ""
             },
             "require": {
@@ -5987,7 +5986,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-25T16:50:00+00:00"
+            "time": "2026-03-10T15:43:37+00:00"
         },
         {
             "name": "symfony/service-contracts",
@@ -6357,12 +6356,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/type-info.git",
-                "reference": "4855ceea609b2c09e48ff76e12a97a3955531735"
+                "reference": "31f1e40cbf7851c7354281c90eb1b352c4cb8269"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/type-info/zipball/4855ceea609b2c09e48ff76e12a97a3955531735",
-                "reference": "4855ceea609b2c09e48ff76e12a97a3955531735",
+                "url": "https://api.github.com/repos/symfony/type-info/zipball/31f1e40cbf7851c7354281c90eb1b352c4cb8269",
+                "reference": "31f1e40cbf7851c7354281c90eb1b352c4cb8269",
                 "shasum": ""
             },
             "require": {
@@ -6432,7 +6431,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-17T14:00:31+00:00"
+            "time": "2026-03-04T12:49:16+00:00"
         },
         {
             "name": "symfony/var-dumper",
@@ -6440,12 +6439,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/var-dumper.git",
-                "reference": "045321c440ac18347b136c63d2e9bf28a2dc0291"
+                "reference": "a98c17e8795b380868c2bf3e2179db352e51a3dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/var-dumper/zipball/045321c440ac18347b136c63d2e9bf28a2dc0291",
-                "reference": "045321c440ac18347b136c63d2e9bf28a2dc0291",
+                "url": "https://api.github.com/repos/symfony/var-dumper/zipball/a98c17e8795b380868c2bf3e2179db352e51a3dd",
+                "reference": "a98c17e8795b380868c2bf3e2179db352e51a3dd",
                 "shasum": ""
             },
             "require": {
@@ -6519,7 +6518,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-15T10:53:20+00:00"
+            "time": "2026-03-17T13:59:19+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
@@ -6802,6 +6801,7 @@
         },
         {
             "name": "budgetcontrol/schema-registry-service",
+<<<<<<< HEAD
             "version": "v1.5.2",
             "source": {
                 "type": "git",
@@ -6812,6 +6812,18 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/BudgetControl/Schema-Registry-Service/zipball/f1ba140ea7fa7fb40fba46a5515f76ff0172f838",
                 "reference": "f1ba140ea7fa7fb40fba46a5515f76ff0172f838",
+=======
+            "version": "v1.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/BudgetControl/Schema-Registry-Service.git",
+                "reference": "49626c283f5d6669fe7d546ce629024b9c229f9f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/BudgetControl/Schema-Registry-Service/zipball/49626c283f5d6669fe7d546ce629024b9c229f9f",
+                "reference": "49626c283f5d6669fe7d546ce629024b9c229f9f",
+>>>>>>> b824c69 (update repository with agregated balance view)
                 "shasum": ""
             },
             "type": "library",
