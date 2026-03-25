@@ -6801,7 +6801,6 @@
         },
         {
             "name": "budgetcontrol/schema-registry-service",
-<<<<<<< HEAD
             "version": "v1.5.2",
             "source": {
                 "type": "git",
@@ -6812,18 +6811,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/BudgetControl/Schema-Registry-Service/zipball/f1ba140ea7fa7fb40fba46a5515f76ff0172f838",
                 "reference": "f1ba140ea7fa7fb40fba46a5515f76ff0172f838",
-=======
-            "version": "v1.6",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/BudgetControl/Schema-Registry-Service.git",
-                "reference": "49626c283f5d6669fe7d546ce629024b9c229f9f"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/BudgetControl/Schema-Registry-Service/zipball/49626c283f5d6669fe7d546ce629024b9c229f9f",
-                "reference": "49626c283f5d6669fe7d546ce629024b9c229f9f",
->>>>>>> b824c69 (update repository with agregated balance view)
                 "shasum": ""
             },
             "type": "library",
